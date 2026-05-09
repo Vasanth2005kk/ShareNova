@@ -1,0 +1,56 @@
+// ShareNova — Prisma Schema
+// UID-first secure file & text sharing platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ShareType {
+  FILE
+  TEXT
+}
+
+model Share {
+  id           String    @id @default(cuid())
+  uid          String    @unique @db.VarChar(12)
+  type         ShareType
+  isPrivate    Boolean   @default(false)
+  passwordHash String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  totalSize    BigInt    @default(0)
+
+  files     File[]
+  textShare TextShare?
+
+  @@index([uid])
+  @@index([expiresAt])
+}
+
+model File {
+  id         String @id @default(cuid())
+  shareId    String
+  filename   String
+  storageKey String // internal R2 object key — never exposed to client
+  mimeType   String
+  size       BigInt
+
+  share Share @relation(fields: [shareId], references: [id], onDelete: Cascade)
+
+  @@index([shareId])
+}
+
+model TextShare {
+  id       String  @id @default(cuid())
+  shareId  String  @unique
+  title    String?
+  content  String  @db.Text
+  language String  @default("plaintext")
+
+  share Share @relation(fields: [shareId], references: [id], onDelete: Cascade)
+}
