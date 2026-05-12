@@ -1,0 +1,115 @@
+.uid-display-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-soft);
+  background-color: var(--surface-1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 2rem;
+}
+
+.uid-display-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom right, rgba(249, 115, 22, 0.05), rgba(251, 191, 36, 0.05));
+  pointer-events: none;
+}
+
+.uid-display-glow {
+  position: absolute;
+  top: -6rem;
+  right: -6rem;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 9999px;
+  background-color: rgba(249, 115, 22, 0.1);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.uid-display-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.success-badge {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.uid-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.uid-code-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.uid-code {
+  font-size: 2.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text-primary);
+}
+
+.copy-button {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-button:hover {
+  background-color: var(--surface-4);
+  transform: scale(1.05);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+.uid-description {
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.highlight-text {
+  color: #fb923c;
+}
+
+.timer-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .uid-code {
+    font-size: 3rem;
+  }
+}

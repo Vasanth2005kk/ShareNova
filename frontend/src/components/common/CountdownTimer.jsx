@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
+import '@/styles/CountdownTimer.css';
 
 // Converts expiresIn string (e.g. "1h", "7d") to milliseconds
 const EXPIRY_MS = {
@@ -54,8 +55,8 @@ export default function CountdownTimer({ expiresAt, expiresIn, sessionStart }) {
 
   if (isExpired) {
     return (
-      <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase tracking-widest">
-        <Clock className="w-3.5 h-3.5" />
+      <div className="expired-badge">
+        <Clock size={14} />
         Expired
       </div>
     );
@@ -65,20 +66,20 @@ export default function CountdownTimer({ expiresAt, expiresIn, sessionStart }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex items-center gap-3"
+      className="timer-container"
     >
-      <div className="flex items-center gap-1 font-mono text-lg font-bold text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]">
+      <div className="timer-display">
         {time.d > 0 && (
           <>
             <span>{pad(time.d)}</span>
-            <span className="text-[10px] text-orange-500/50 -mt-2">d</span>
-            <span className="text-orange-500/30 mx-1">:</span>
+            <span className="timer-unit-label">d</span>
+            <span className="timer-separator">:</span>
           </>
         )}
         <span>{pad(time.h)}</span>
-        <span className="text-orange-500/30 animate-pulse">:</span>
+        <span className="timer-separator pulse">:</span>
         <span>{pad(time.m)}</span>
-        <span className="text-orange-500/30 animate-pulse">:</span>
+        <span className="timer-separator pulse">:</span>
         <span>{pad(time.s)}</span>
       </div>
     </motion.div>

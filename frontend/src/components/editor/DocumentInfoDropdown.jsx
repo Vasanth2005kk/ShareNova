@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, X, FileText, Trash2, Clock } from 'lucide-react';
+import { Info, X, FileText, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import CountdownTimer from '@/components/common/CountdownTimer';
+import '@/styles/DocumentInfoDropdown.css';
 
 export default function DocumentInfoDropdown({ 
   isOpen, 
@@ -41,76 +42,62 @@ export default function DocumentInfoDropdown({
           initial={{ opacity: 0, y: 10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
-          className="absolute top-full right-0 mt-3 w-80 z-50"
+          className="dropdown-container"
         >
-          <div className="bg-(--bg-secondary) border border-(--border-strong) rounded-2xl p-5 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-(--border-soft)">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-orange-500/10 text-orange-500">
-                  <Info className="w-4 h-4" />
+          <div className="dropdown-card">
+            <div className="dropdown-header">
+              <div className="header-title">
+                <div className="header-icon-wrapper">
+                  <Info size={16} />
                 </div>
-                <span className="text-sm font-bold text-(--text-primary)">Information</span>
+                <span className="header-label">Information</span>
               </div>
               <button 
                 onClick={onClose}
-                className="p-1 rounded-lg hover:bg-(--surface-2) text-(--text-dim) hover:text-(--text-primary) transition-all"
+                className="close-button"
               >
-                <X className="w-4 h-4" />
+                <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-5">
+            <div className="dropdown-body">
               {/* Document Title Edit */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-semibold text-(--text-dim) uppercase tracking-wider">Document Title</label>
-                <div className="relative group">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-dim) group-focus-within:text-orange-500 transition-colors" />
+              <div>
+                <label className="section-label">Document Title</label>
+                <div className="title-input-wrapper">
+                  <FileText className="title-input-icon" />
                   <input 
                     type="text"
                     value={draftTitle}
                     onChange={(e) => setDraftTitle(e.target.value)}
                     placeholder="Untitled Document..."
-                    className="w-full bg-(--surface-2) border border-(--border-subtle) rounded-xl pl-10 pr-4 py-2.5 text-sm text-(--text-primary) focus:outline-none focus:border-orange-500/40 transition-all placeholder:text-(--text-placeholder)"
+                    className="title-input"
                   />
                 </div>
               </div>
-
-              {/* Status & Stats */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-(--surface-1) border border-(--border-subtle)">
-                  <div className="text-[10px] text-(--text-dim) uppercase tracking-wider font-bold mb-1">Status</div>
-                  <div className="text-xs text-(--text-secondary) flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    Live Draft
-                  </div>
-                </div>
-                <div className="p-3 rounded-xl bg-(--surface-1) border border-(--border-subtle)">
-                  <div className="text-[10px] text-(--text-dim) uppercase tracking-wider font-bold mb-1">Length</div>
-                  <div className="text-xs text-(--text-secondary)">
-                    {contentLength.toLocaleString()} chars
-                  </div>
-                </div>
-              </div>
-
               {/* Share Options */}
-              <div className="pt-2 border-t border-(--border-soft)">
-                <label className="text-[10px] font-semibold text-(--text-dim) uppercase tracking-wider block mb-3">Share Configuration</label>
-                <ShareOptionsForm options={draftOptions} onChange={setDraftOptions} />
+              <div className="config-section">
+                {/* <label className="section-label">Share Configuration</label> */}
+                <ShareOptionsForm 
+                  options={draftOptions} 
+                  onChange={setDraftOptions} 
+                  showExpiry={false}
+                />
               </div>
 
               {/* Countdown / Expiry */}
-              <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10 mt-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] text-orange-500/60 uppercase tracking-widest font-bold">Time Remaining</div>
+              <div className="remaining-time-box">
+                <div className="remaining-time-header">
+                  <div className="remaining-time-label">Time Remaining</div>
                   {!expiresAt && (
-                    <span className="text-[9px] text-orange-400/50 italic">Preview — resets on save</span>
+                    <span className="preview-tag">Preview — resets on save</span>
                   )}
                 </div>
                 <CountdownTimer expiresAt={expiresAt} expiresIn={draftOptions.expiresIn} sessionStart={sessionStart} />
               </div>
 
               {/* Actions */}
-              <div className="pt-4 border-t border-(--border-soft) flex gap-3">
+              <div className="dropdown-actions">
                 <button 
                   onClick={() => {
                     if(confirm('Are you sure you want to clear this document?')) {
@@ -118,14 +105,14 @@ export default function DocumentInfoDropdown({
                       onClose();
                     }
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/5 text-red-400 text-[11px] font-bold border border-red-500/10 hover:bg-red-500 hover:text-white transition-all group"
+                  className="action-button clear-button"
                 >
-                  <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                  <Trash2 size={14} />
                   Clear Sheet
                 </button>
                 <button 
                   onClick={handleDone}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[11px] font-bold shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-[0.98]"
+                  className="action-button done-button"
                 >
                   Done Editing
                 </button>

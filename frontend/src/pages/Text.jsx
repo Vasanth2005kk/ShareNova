@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { FileText, Loader2, Sparkles, Search, Save, Info, X, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Sparkles, Save, Info, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
 import { createTextShare, getShareByUID, getTextContent } from '@/lib/api';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
+import '@/styles/Text.css';
 
 export default function TextPage() {
   const location = useLocation();
@@ -155,26 +156,19 @@ export default function TextPage() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="space-y-6"
+              className="empty-state-wrapper"
             >
-              <div className="relative">
+              <div className="empty-icon-container">
                 <FileText className="word-sheet__empty-icon" />
-                <motion.div 
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <Sparkles className="w-12 h-12 text-orange-500/20" />
-                </motion.div>
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-(--text-primary)">Word Sheet Ready</h2>
-                <p className="text-(--text-muted) max-w-md mx-auto">
+              <div className="empty-text-group">
+                <h2 className="empty-title">Word Sheet Ready</h2>
+                <p className="empty-desc">
                   To begin, use the <strong>Create Editor</strong> button on the home page or 
                   <strong>Search</strong> for a 12-digit code in the sidebar to join an existing sheet.
                 </p>
               </div>
-              <Link to="/" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-(--surface-2) border border-(--border-soft) text-sm font-medium hover:bg-(--surface-3) transition-all">
+              <Link to="/" className="home-link">
                 Go to Home
               </Link>
             </motion.div>
@@ -182,9 +176,9 @@ export default function TextPage() {
         ) : (
           <div className="word-sheet-container">
             {state === 'done' && uid ? (
-              <div className="w-full max-w-2xl mx-auto px-6">
+              <div className="editor-success-view">
                 <UIDDisplay uid={uid} expiresAt={expiresAt} />
-                <button onClick={reset} className="page-split__btn-secondary mt-6">
+                <button onClick={reset} className="page-split__btn-secondary new-sheet-button">
                   Create New Sheet
                 </button>
               </div>
@@ -194,19 +188,15 @@ export default function TextPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="word-sheet"
               >
-                <div className="mb-8 pb-4 border-b border-(--border-soft) flex items-center justify-between relative">
-                  <h1 className="text-2xl text-(--text-primary)">{title || 'Untitled Document'}</h1>
+                <div className="word-sheet-header">
+                  <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
                   <div className='Details-con'>
                     <button 
                       onClick={() => setShowDetails(!showDetails)}
-                      className={`p-2 rounded-xl transition-all ${
-                        showDetails 
-                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
-                        : 'bg-(--surface-2) text-(--text-muted) hover:bg-(--surface-3) hover:text-orange-500 border border-(--border-soft)'
-                      }`}
+                      className={`details-toggle-button ${showDetails ? 'active' : ''}`}
                       title="Document Information & Options"
                     >
-                      <Info className="w-5 h-5" />
+                      <Info size={20} />
                     </button>
 
                     <DocumentInfoDropdown 
@@ -231,16 +221,16 @@ export default function TextPage() {
                   className="word-sheet__textarea"
                 />
 
-                <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-tighter font-medium">
+                <div className="word-sheet-footer">
+                  <span className="char-counter">
                     {content.length.toLocaleString()} Characters / {MAX_TEXT_SIZE.toLocaleString()} Max
                   </span>
                   {state === 'idle' && content.trim() && (
                     <button 
                       onClick={handleSubmit}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all"
+                      className="save-button"
                     >
-                      <Save className="w-3.5 h-3.5" />
+                      <Save size={14} />
                       Save & Get Code
                     </button>
                   )}
@@ -268,38 +258,34 @@ export default function TextPage() {
 
         {isSearching && (
           <div className="page-split__sidebar-card">
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="w-5 h-5 animate-spin text-(--text-muted)" />
+            <div className="loader-wrapper">
+              <Loader2 className="animate-spin" size={20} color="var(--text-muted)" />
             </div>
           </div>
         )}
 
         {searchResults && (
-          <div className="page-split__sidebar-card page-split__result-card animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="page-split__sidebar-card">
             <span className="page-split__sidebar-label">Found Share</span>
-            <div className="space-y-2 mt-1">
-              <div className="text-sm font-semibold text-(--text-primary) truncate">
+            <div className="result-card-body">
+              <div className="result-title">
                 {searchResults.title || 'Untitled Share'}
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                  searchResults.type === 'TEXT' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'
-                }`}>
+              <div>
+                <span className={`type-tag ${searchResults.type === 'TEXT' ? 'text' : 'file'}`}>
                   {searchResults.type}
                 </span>
               </div>
               <button 
                 onClick={loadShareContent}
                 disabled={searchResults.type !== 'TEXT'}
-                className="block w-full text-center py-2 mt-2 rounded-lg bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="load-button"
               >
                 {searchResults.type === 'TEXT' ? 'Load into Editor' : 'File Only'}
               </button>
             </div>
           </div>
         )}
-
-        {/* Options moved to Details dialog */}
       </aside>
     </div>
   );

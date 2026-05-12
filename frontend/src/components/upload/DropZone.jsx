@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Upload, X, FileIcon } from 'lucide-react';
 import { formatBytes } from '@/lib/api';
 import { MAX_UPLOAD_SIZE, MAX_FILES } from '@/lib/constants';
+import '@/styles/DropZone.css';
 
 export default function DropZone({ files, onFilesChange }) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -48,7 +49,7 @@ export default function DropZone({ files, onFilesChange }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="dropzone-container">
       <motion.label
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -57,16 +58,16 @@ export default function DropZone({ files, onFilesChange }) {
           borderColor: isDragOver ? 'var(--accent-ring)' : 'var(--border-subtle)',
           backgroundColor: isDragOver ? 'var(--accent-surface)' : 'var(--surface-1)',
         }}
-        className="flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:border-(--border-strong)"
+        className="dropzone-label"
       >
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 flex items-center justify-center">
-          <Upload className="w-6 h-6 text-orange-400" />
+        <div className="dropzone-icon-wrapper">
+          <Upload className="dropzone-icon" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-(--text-secondary)">
-            Drop files here or <span className="text-orange-400">browse</span>
+          <p className="dropzone-text-main">
+            Drop files here or <span className="dropzone-text-highlight">browse</span>
           </p>
-          <p className="text-xs text-(--text-dim) mt-1">
+          <p className="dropzone-text-sub">
             Up to {MAX_FILES} files · Max {formatBytes(MAX_UPLOAD_SIZE)} total
           </p>
         </div>
@@ -74,27 +75,27 @@ export default function DropZone({ files, onFilesChange }) {
           type="file"
           multiple
           onChange={handleInputChange}
-          className="hidden"
+          className="hidden-input"
         />
       </motion.label>
 
       {files.length > 0 && (
-        <div className="space-y-2">
+        <div className="file-list">
           {files.map((file, i) => (
             <motion.div
               key={`${file.name}-${i}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-(--surface-1) border border-(--border-subtle)"
+              className="file-item"
             >
-              <FileIcon className="w-4 h-4 text-orange-400 shrink-0" />
-              <span className="text-sm text-(--text-secondary) truncate flex-1">{file.name}</span>
-              <span className="text-xs text-(--text-dim) shrink-0">{formatBytes(file.size)}</span>
+              <FileIcon className="file-icon" />
+              <span className="file-name">{file.name}</span>
+              <span className="file-size">{formatBytes(file.size)}</span>
               <button
                 onClick={() => removeFile(i)}
-                className="p-1 rounded-lg hover:bg-(--surface-4) text-(--text-dim) hover:text-red-400 transition-all"
+                className="file-remove"
               >
-                <X className="w-4 h-4" />
+                <X size={16} />
               </button>
             </motion.div>
           ))}

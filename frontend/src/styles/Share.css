@@ -1,0 +1,209 @@
+.share-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.share-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.file-download-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.file-download-item:hover {
+  background-color: var(--surface-3);
+}
+
+.file-icon-wrapper {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(to bottom right, rgba(249, 115, 22, 0.1), rgba(251, 191, 36, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.download-all-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.download-all-button:hover {
+  background-color: var(--surface-4);
+  color: var(--text-primary);
+}
+
+.text-content-box {
+  border-radius: 0.75rem;
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.text-content {
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow: auto;
+  max-height: 60vh;
+  line-height: 1.625;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.secondary-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-button:hover {
+  color: var(--text-primary);
+  background-color: var(--surface-4);
+}
+
+/* UID Input */
+.uid-input-form {
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.uid-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+.uid-input-icon {
+  padding-left: 1.25rem;
+  color: var(--text-dim);
+}
+
+.uid-input-field {
+  flex: 1;
+  background: transparent;
+  padding: 1.25rem 1rem;
+  font-size: 1.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  border: none;
+  outline: none;
+  text-align: center;
+}
+
+.uid-submit-button {
+  margin-right: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(to right, #f97316, #f59e0b);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.uid-submit-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.uid-submit-button:not(:disabled):hover {
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.25);
+  transform: scale(1.05);
+}
+
+.uid-helper-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  margin-top: 0.75rem;
+}

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ArrowRight } from 'lucide-react';
 import { formatUID, normalizeUID, isValidUID } from '@/lib/uid';
+import '@/styles/Share.css';
 
 export default function UIDInput({ onSubmit, isLoading }) {
   const [value, setValue] = useState('');
@@ -28,20 +29,16 @@ export default function UIDInput({ onSubmit, isLoading }) {
   const isValid = isValidUID(normalizeUID(value));
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-lg mx-auto">
+    <form onSubmit={handleSubmit} className="uid-input-form">
       <motion.div
         animate={{
-          borderColor: isFocused
-            ? 'var(--accent-ring)'
-            : 'var(--border-subtle)',
-          boxShadow: isFocused
-            ? '0 0 30px var(--accent-ring-glow)'
-            : '0 0 0px transparent',
+          borderColor: isFocused ? 'var(--accent-ring)' : 'var(--border-subtle)',
+          boxShadow: isFocused ? '0 0 30px var(--accent-ring-glow)' : '0 0 0px transparent',
         }}
-        className="relative flex items-center rounded-2xl border border-(--border-subtle) bg-(--surface-1) backdrop-blur-xl overflow-hidden"
+        className="uid-input-container"
       >
-        <div className="pl-5">
-          <Search className="w-5 h-5 text-(--text-dim)" />
+        <div className="uid-input-icon">
+          <Search size={20} />
         </div>
         <input
           ref={inputRef}
@@ -52,22 +49,22 @@ export default function UIDInput({ onSubmit, isLoading }) {
           onBlur={() => setIsFocused(false)}
           placeholder="0000 0000 0000"
           maxLength={14}
-          className="flex-1 bg-transparent px-4 py-5 text-2xl font-mono tracking-[0.2em] text-(--text-primary) placeholder:text-(--text-placeholder) focus:outline-none text-center"
+          className="uid-input-field"
           autoComplete="off"
         />
         <button
           type="submit"
           disabled={!isValid || isLoading}
-          className="mr-3 p-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-orange-500/25 transition-all hover:scale-105 active:scale-95"
+          className="uid-submit-button"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight size={20} />
           )}
         </button>
       </motion.div>
-      <p className="text-center text-sm text-(--text-dim) mt-3">
+      <p className="uid-helper-text">
         Enter the 12-digit share code to retrieve files or text
       </p>
     </form>

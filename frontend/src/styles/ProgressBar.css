@@ -1,0 +1,33 @@
+.progress-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.progress-label {
+  color: var(--text-muted);
+}
+
+.progress-percentage {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.progress-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--surface-3);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #f97316, #fbbf24);
+}
