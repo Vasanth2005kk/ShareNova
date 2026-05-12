@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Search, Sparkles, Sun, Moon } from 'lucide-react';
+import { Sparkles, Sun, Moon, Info, Zap } from 'lucide-react';
 import clsx from 'clsx';
 
 const navLinks = [
-  { href: '/upload', label: 'Upload', icon: Upload },
-  { href: '/text', label: 'Text', icon: FileText },
-  { href: '/retrieve', label: 'Retrieve', icon: Search },
+  { href: '/start', label: 'Start', icon: Zap },
+  { href: '/about', label: 'About', icon: Info },
 ];
 
 const THEME_KEY = 'sharenova-theme';
