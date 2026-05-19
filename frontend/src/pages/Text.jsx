@@ -1,14 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { FileText, Loader2, Sparkles, Save, Info, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Sparkles, Save, Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
 import { createTextShare } from '@/lib/api';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
 import '@/styles/Text.css';
+
+const EXPIRY_MS = {
+  '30m': 30 * 60 * 1000,
+  '1h':  1 * 60 * 60 * 1000,
+  '6h':  6 * 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '7d':  7 * 24 * 60 * 60 * 1000,
+  '30d': 30 * 24 * 60 * 60 * 1000,
+};
+
+function buildSessionExpiry(startMs, expiresIn) {
+  if (!startMs || !expiresIn || !EXPIRY_MS[expiresIn]) return null;
+  return new Date(startMs + EXPIRY_MS[expiresIn]).toISOString();
+}
 
 export default function TextPage() {
   const location = useLocation();
@@ -25,19 +38,24 @@ export default function TextPage() {
   const [uid, setUid] = useState('');
   const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState('');
+  const [sessionExpiresAt, setSessionExpiresAt] = useState(null);
+  const [sessionPassword, setSessionPassword] = useState('');
+  const [sessionActive, setSessionActive] = useState(true);
 
   // Persistent session start — captured once on mount, never resets when modal opens/closes
   const sessionStart = useRef(null);
   
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
+  const isNewSession = Boolean(initialState.title || initialState.password || initialState.expiresIn);
 
   // ─── Persistence Logic ───────────────────────────────────
   useEffect(() => {
     const saved = localStorage.getItem('sharenova_editor_state');
-    if (saved) {
+    let parsed = null;
+    if (!isNewSession && saved) {
       try {
-        const parsed = JSON.parse(saved);
+        parsed = JSON.parse(saved);
         if (parsed.title) setTitle(parsed.title);
         if (parsed.options) setOptions(parsed.options);
         if (parsed.uid) setUid(parsed.uid);
@@ -47,21 +65,47 @@ export default function TextPage() {
         console.error('Failed to load saved state', e);
       }
     }
+
+    if (isNewSession) {
+      localStorage.removeItem('sharenova_editor_state');
+    }
+
     if (!sessionStart.current) {
       sessionStart.current = Date.now();
     }
+
+    const expirySeed =
+      (isNewSession ? initialState.expiresIn : null) ||
+      parsed?.sessionExpiresIn ||
+      parsed?.options?.expiresIn ||
+      options.expiresIn;
+    const nextSessionExpiry = parsed?.sessionExpiresAt
+      ? parsed.sessionExpiresAt
+      : buildSessionExpiry(sessionStart.current, expirySeed);
+    setSessionExpiresAt(nextSessionExpiry);
+
+    const nextSessionPassword =
+      (isNewSession ? initialState.password : null) ||
+      parsed?.sessionPassword ||
+      parsed?.options?.password ||
+      options.password ||
+      '';
+    setSessionPassword(nextSessionPassword);
   }, []);
 
   useEffect(() => {
+    if (!sessionActive) return;
     const stateToSave = {
       title,
       options,
       uid,
       expiresAt,
-      sessionStart: sessionStart.current
+      sessionStart: sessionStart.current,
+      sessionExpiresAt,
+      sessionPassword
     };
     localStorage.setItem('sharenova_editor_state', JSON.stringify(stateToSave));
-  }, [title, options, uid, expiresAt]);
+  }, [title, options, uid, expiresAt, sessionExpiresAt, sessionPassword, sessionActive]);
 
 
 
@@ -99,13 +143,31 @@ export default function TextPage() {
     setUid('');
     setExpiresAt(null);
     setError('');
-    // Reset session start for the new session
     sessionStart.current = Date.now();
+    setSessionExpiresAt(buildSessionExpiry(sessionStart.current, options.expiresIn));
+    setSessionPassword(options.password || '');
+    setSessionActive(true);
+    localStorage.removeItem('sharenova_editor_state');
+  }
+
+  function deleteSession() {
+    setContent('');
+    setTitle('');
+    setOptions({ expiresIn: initialState.expiresIn || '24h', password: '' });
+    setState('idle');
+    setUid('');
+    setExpiresAt(null);
+    setError('');
+    setShowDetails(false);
+    sessionStart.current = null;
+    setSessionExpiresAt(null);
+    setSessionPassword('');
+    setSessionActive(false);
     localStorage.removeItem('sharenova_editor_state');
   }
 
   // Check if we are in "active editing" mode (from home or loaded)
-  const isEditing = !!initialState.title || content.length > 0 || state === 'done';
+  const isEditing = sessionActive && (initialState.title || content.length > 0 || state === 'done');
 
   return (
     <div className="page-split">
@@ -167,8 +229,10 @@ export default function TextPage() {
                       options={options} 
                       setOptions={setOptions} 
                       contentLength={content.length} 
-                      onClear={() => setContent('')} 
+                      onDeleteSession={deleteSession}
                       expiresAt={expiresAt}
+                      sessionExpiresAt={sessionExpiresAt}
+                      sessionPassword={sessionPassword}
                       sessionStart={sessionStart.current}
                     />
                   </div>

@@ -20,7 +20,7 @@ _running = False
 
 
 async def cleanup_expired_shares() -> None:
-    """Delete expired shares from DB and R2. Overlap-prevention via _running flag."""
+    """Delete expired shares from DB and storage. Overlap-prevention via _running flag."""
     global _running
     if _running:
         logger.debug("Cleanup already running — skipping")
@@ -41,7 +41,7 @@ async def cleanup_expired_shares() -> None:
             if not expired:
                 return
 
-            # Collect storage keys and delete from R2
+            # Collect storage keys and delete from storage
             storage_keys = []
             for share in expired:
                 for f in share.files:
@@ -51,7 +51,7 @@ async def cleanup_expired_shares() -> None:
                 try:
                     await storage_service.delete_files(storage_keys)
                 except Exception as e:
-                    logger.error(f"Failed to delete files from R2: {e}")
+                    logger.error(f"Failed to delete files from storage: {e}")
 
             # Delete from DB (cascade handles files + text_shares)
             share_ids = [s.id for s in expired]

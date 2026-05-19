@@ -13,19 +13,29 @@ export default function DocumentInfoDropdown({
   options, 
   setOptions, 
   contentLength, 
-  onClear,
+  onDeleteSession,
   expiresAt,
+  sessionExpiresAt,
+  sessionPassword,
   sessionStart
 }) {
   // Local draft state to prevent instant updates to the main editor
   const [draftTitle, setDraftTitle] = useState(title);
   const [draftOptions, setDraftOptions] = useState(options);
+  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   // Sync local state when dropdown opens
   useEffect(() => {
     if (isOpen) {
       setDraftTitle(title);
       setDraftOptions(options);
+    }
+    if (!isOpen) {
+      setShowDeletePrompt(false);
+      setDeletePassword('');
+      setDeleteError('');
     }
   }, [isOpen, title, options]);
 
@@ -34,6 +44,18 @@ export default function DocumentInfoDropdown({
     setOptions(draftOptions);
     onClose();
   };
+
+  const handleDelete = () => {
+    const expected = sessionPassword || '';
+    if (deletePassword !== expected) {
+      setDeleteError('Incorrect password');
+      return;
+    }
+    onDeleteSession();
+    onClose();
+  };
+
+  const effectiveExpiry = sessionExpiresAt || expiresAt;
 
   return (
     <AnimatePresence>
@@ -89,26 +111,46 @@ export default function DocumentInfoDropdown({
               <div className="remaining-time-box">
                 <div className="remaining-time-header">
                   <div className="remaining-time-label">Time Remaining</div>
-                  {!expiresAt && (
-                    <span className="preview-tag">Preview — resets on save</span>
-                  )}
                 </div>
-                <CountdownTimer expiresAt={expiresAt} expiresIn={draftOptions.expiresIn} sessionStart={sessionStart} />
+                <CountdownTimer
+                  expiresAt={effectiveExpiry}
+                  expiresIn={draftOptions.expiresIn}
+                  sessionStart={sessionStart}
+                />
               </div>
+
+              {showDeletePrompt && (
+                <div className="delete-confirm">
+                  <label className="delete-label">Enter session password to delete</label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => {
+                      setDeletePassword(e.target.value);
+                      if (deleteError) setDeleteError('');
+                    }}
+                    placeholder="Password"
+                    className="delete-input"
+                  />
+                  {deleteError && <div className="delete-error">{deleteError}</div>}
+                </div>
+              )}
 
               {/* Actions */}
               <div className="dropdown-actions">
                 <button 
                   onClick={() => {
-                    if(confirm('Are you sure you want to clear this document?')) {
-                      onClear();
-                      onClose();
+                    setDeleteError('');
+                    if (!showDeletePrompt) {
+                      setShowDeletePrompt(true);
+                      return;
                     }
+                    handleDelete();
                   }}
                   className="action-button clear-button"
                 >
                   <Trash2 size={14} />
-                  Clear Sheet
+                  Delete Session
                 </button>
                 <button 
                   onClick={handleDone}

@@ -25,7 +25,9 @@ export default function TextShareView({ share, content }) {
             <FileText size={20} color="#fb923c" />
             {content.title || 'Shared Text'}
           </h2>
-          <p className="share-subtitle">{content.language}</p>
+          {content.language && content.language !== 'plaintext' && (
+            <p className="share-subtitle">{content.language}</p>
+          )}
         </div>
         <div className="action-bar">
           {share.expiresAt && <CountdownTimer expiresAt={share.expiresAt} />}

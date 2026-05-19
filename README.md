@@ -52,7 +52,7 @@ Upload files or paste text → get a **12-digit code** → share the code → re
 - **UID-only access** — no guessable URLs
 - **Password protection** with bcrypt hashing
 - **Magic-byte MIME validation** — blocks dangerous files
-- **Presigned URL downloads** — storage keys never exposed
+- **Direct file downloads** — storage keys never exposed
 - **Rate limiting** across 4 tiers
 
 </td>
@@ -83,7 +83,7 @@ Upload files or paste text → get a **12-digit code** → share the code → re
 ### 🕐 Auto-Expiry
 - **5 expiry tiers:** 1h, 6h, 24h, 7d, 30d
 - **Automatic cleanup** of expired shares
-- **Storage purge** — files deleted from R2/S3
+- **Storage purge** — files deleted from local storage
 - **Session tokens** with 15-minute TTL
 - **Countdown timer** on shared content
 
@@ -99,7 +99,7 @@ Upload files or paste text → get a **12-digit code** → share the code → re
 graph LR
     A[React + Vite] -->|fetch| B[FastAPI]
     B -->|SQLAlchemy| C[(PostgreSQL)]
-    B -->|boto3| D[Cloudflare R2]
+    B -->|filesystem| D[Local Storage]
     B -->|APScheduler| E[Cleanup Worker]
     B -->|passlib| F[bcrypt]
     B -->|slowapi| G[Rate Limiter]
@@ -117,7 +117,7 @@ graph LR
 | **Migrations** | Alembic | Prisma Migrate |
 | **Validation** | Pydantic v2 | Zod |
 | **Auth** | passlib[bcrypt] | bcrypt (npm) |
-| **Storage** | boto3 (S3-compatible) | @aws-sdk/client-s3 |
+| **Storage** | Local filesystem | — |
 | **Rate Limiting** | slowapi | express-rate-limit |
 | **Scheduler** | APScheduler (AsyncIOScheduler) | node-cron |
 | **MIME Check** | python-magic | file-type (npm) |
@@ -155,14 +155,14 @@ ShareNova/
 │   │   ├── schemas.py           # Pydantic request/response models
 │   │   ├── routers/
 │   │   │   ├── shares.py        # CRUD + password verify + text content
-│   │   │   ├── files.py         # Presigned URL file download
+│   │   │   ├── files.py         # Local file download
 │   │   │   ├── download.py      # ZIP streaming
 │   │   │   └── health.py        # Health check
 │   │   ├── services/
 │   │   │   ├── uid_service.py   # 12-digit UID generation
 │   │   │   ├── share_service.py # Core CRUD operations
 │   │   │   ├── password_service.py  # bcrypt + session tokens
-│   │   │   ├── storage_service.py   # R2/S3 via boto3
+│   │   │   ├── storage_service.py   # Local filesystem storage
 │   │   │   └── cleanup_service.py   # Expired share purge
 │   │   └── middleware/
 │   │       ├── rate_limiter.py  # slowapi tiers
@@ -209,7 +209,7 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your database credentials and R2 keys
+# Edit .env with your database credentials and storage directory
 
 # Start the server
 python main.py
@@ -240,10 +240,7 @@ The app will be running at `http://localhost:5173`
 ```env
 PORT=8000
 DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/sharenova
-R2_ACCOUNT_ID=your_cloudflare_account_id
-R2_ACCESS_KEY_ID=your_r2_access_key
-R2_SECRET_ACCESS_KEY=your_r2_secret_key
-R2_BUCKET_NAME=sharenova
+STORAGE_DIR=storage
 BCRYPT_ROUNDS=12
 SESSION_SECRET=your_32_char_random_string
 FRONTEND_URL=http://localhost:5173
@@ -265,7 +262,7 @@ VITE_API_URL=http://localhost:8000
 │  ├─ Never sees storage keys                         │
 │  ├─ Never sees password hashes                      │
 │  ├─ Sends X-Session-Token for private shares        │
-│  └─ Downloads via presigned URL redirect (60s TTL)  │
+│  └─ Downloads served from local storage             │
 ├─────────────────────────────────────────────────────┤
 │  FastAPI Server                                     │
 │  ├─ Helmet-equivalent security headers              │
@@ -279,8 +276,8 @@ VITE_API_URL=http://localhost:8000
 │  ├─ Parameterized queries (SQLAlchemy)              │
 │  └─ Indexes on uid, expires_at                      │
 ├─────────────────────────────────────────────────────┤
-│  Cloudflare R2                                      │
-│  ├─ Server-side presigned URLs only                 │
+│  Local Storage                                     │
+│  ├─ Files stored on server disk                     │
 │  └─ Batch delete on share expiry                    │
 └─────────────────────────────────────────────────────┘
 ```
@@ -296,7 +293,7 @@ VITE_API_URL=http://localhost:8000
 | `GET` | `/api/shares/{uid}` | Get share metadata | 20/minute |
 | `POST` | `/api/shares/{uid}/verify` | Verify password, get session token | 5/10min |
 | `GET` | `/api/shares/{uid}/content` | Get text content | 20/minute |
-| `GET` | `/api/files/{id}/download` | Download file (redirect) | 20/minute |
+| `GET` | `/api/files/{id}/download` | Download file | 20/minute |
 | `GET` | `/api/download/{uid}/all` | Download all as ZIP | 20/minute |
 | `GET` | `/api/health` | Health check | — |
 

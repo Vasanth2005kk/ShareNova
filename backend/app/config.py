@@ -15,12 +15,8 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = Field(min_length=1)
 
-    # Cloudflare R2 / S3
-    R2_ACCOUNT_ID: str = Field(min_length=1)
-    R2_ACCESS_KEY_ID: str = Field(min_length=1)
-    R2_SECRET_ACCESS_KEY: str = Field(min_length=1)
-    R2_BUCKET_NAME: str = Field(min_length=1)
-    R2_ENDPOINT: str | None = Field(default=None)
+    # Storage
+    STORAGE_DIR: str = Field(default="storage")
 
     # Security
     BCRYPT_ROUNDS: int = Field(default=12)
