@@ -76,10 +76,61 @@
   position: relative;
 }
 
+.word-sheet-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .word-sheet-title {
   font-size: 1.5rem;
   color: var(--text-primary);
   font-weight: 700;
+}
+
+.session-uid-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.session-uid-label {
+  font-size: 0.625rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.session-uid-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-soft);
+}
+
+.session-uid-code {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+}
+
+.session-uid-copy {
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.session-uid-copy:hover {
+  background-color: var(--surface-3);
 }
 
 .details-toggle-button {
@@ -110,6 +161,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.save-error {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 0.75rem;
 }
 
 .char-counter {

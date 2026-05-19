@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, ArrowRight, FileText, Lock, Clock, AlertCircle, X } from 'lucide-react';
+import { ArrowRight, FileText, Lock, Clock, AlertCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import '@/styles/EditorConfigModal.css';
@@ -10,7 +10,7 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
 
   if (!isOpen) return null;
 
-  const isValid = data.title.trim() !== '' && data.password.trim() !== '';
+  const isValid = data.title.trim() !== '';
 
   const handleProceed = () => {
     if (!isValid) {
@@ -24,6 +24,7 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
   return (
     <AnimatePresence>
       <motion.div
+        key="overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -31,16 +32,23 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
         className="modal-overlay"
       />
       <motion.div
+        key="content"
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         className="modal-content"
       >
         <h2 className="modal-title">Create Editor</h2>
-        <button onClick={onClose} className="modal-close">
+        <button type="button" onClick={onClose} className="modal-close">
           <X size={20} />
-        </button>        
-        <div className="modal-form">
+        </button>
+        <form
+          className="modal-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleProceed();
+          }}
+        >
           <div className="form-group">
             <label className="form-label">Title</label>
             <div className="input-wrapper">
@@ -49,10 +57,11 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
                 type="text"
                 value={data.title}
                 onChange={(e) => {
-                  onChange({...data, title: e.target.value});
-                  if (e.target.value.trim() && data.password.trim()) setShowError(false);
+                  onChange({ ...data, title: e.target.value });
+                  if (e.target.value.trim()) setShowError(false);
                 }}
                 placeholder="Enter share title..."
+                autoComplete="username"
                 className={`input-field ${showError && !data.title.trim() ? 'error' : ''}`}
               />
             </div>
@@ -78,27 +87,12 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
               <input
                 type="password"
                 value={data.password}
-                onChange={(e) => {
-                  onChange({...data, password: e.target.value});
-                  if (e.target.value.trim() && data.title.trim()) setShowError(false);
-                }}
+                onChange={(e) => onChange({ ...data, password: e.target.value })}
                 placeholder="Set a password..."
-                className={`input-field ${showError && !data.password.trim() ? 'error' : ''}`}
+                autoComplete="current-password"
+                className="input-field"
               />
             </div>
-            <AnimatePresence>
-              {showError && !data.password.trim() && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="error-message"
-                >
-                  <AlertCircle size={12} />
-                  Password is required
-                </motion.p>
-              )}
-            </AnimatePresence>
           </div>
 
           <div className="form-row">
@@ -108,7 +102,7 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
                 <Clock className="input-icon" />
                 <select
                   value={data.expiresIn}
-                  onChange={(e) => onChange({...data, expiresIn: e.target.value})}
+                  onChange={(e) => onChange({ ...data, expiresIn: e.target.value })}
                   className="select-field"
                 >
                   <option value="30m">30 Minutes</option>
@@ -120,18 +114,16 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
                 </select>
               </div>
             </div>
-
-            
           </div>
 
           <button
-            onClick={handleProceed}
+            type="submit"
             className={`modal-submit ${isValid ? 'valid' : 'invalid'}`}
           >
             Proceed to Editor
             <ArrowRight size={20} />
           </button>
-        </div>
+        </form>
       </motion.div>
     </AnimatePresence>
   );

@@ -1,11 +1,14 @@
+const UID_LENGTH = 6;
+const UID_GROUP = 3;
+
 /**
- * Format a 12-digit UID into groups: "1234 5678 9012"
+ * Format a 6-digit UID into groups: "123 456"
  */
 export function formatUID(uid) {
-  const clean = uid.replace(/\D/g, '');
+  const clean = uid.replace(/\D/g, '').slice(0, UID_LENGTH);
   const parts = [];
-  for (let i = 0; i < clean.length && i < 12; i += 4) {
-    parts.push(clean.slice(i, i + 4));
+  for (let i = 0; i < clean.length; i += UID_GROUP) {
+    parts.push(clean.slice(i, i + UID_GROUP));
   }
   return parts.join(' ');
 }
@@ -14,12 +17,24 @@ export function formatUID(uid) {
  * Strip all non-digit characters from a UID input.
  */
 export function normalizeUID(input) {
-  return input.replace(/\D/g, '').slice(0, 12);
+  return input.replace(/\D/g, '').slice(0, UID_LENGTH);
 }
 
 /**
- * Check if a string is a valid 12-digit UID.
+ * Check if a string is a valid 6-digit UID.
  */
 export function isValidUID(uid) {
-  return /^\d{12}$/.test(uid);
+  return new RegExp(`^\\d{${UID_LENGTH}}$`).test(uid);
+}
+
+/**
+ * Generate a random 6-digit UID.
+ */
+export function generateUID() {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return String(buf[0] % 1000000).padStart(UID_LENGTH, '0');
+  }
+  return String(Math.floor(Math.random() * 1000000)).padStart(UID_LENGTH, '0');
 }

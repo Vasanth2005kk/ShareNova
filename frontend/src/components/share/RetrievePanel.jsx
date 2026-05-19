@@ -6,7 +6,7 @@ import TextShareView from '@/components/share/TextShareView';
 import FileShareView from '@/components/share/FileShareView';
 import { getShareByUID, verifyPassword, getTextContent } from '@/lib/api';
 
-export default function RetrievePanel({ title = 'Retrieve a Share', description = 'Enter the 12-digit code to access shared content.' }) {
+export default function RetrievePanel({ title = 'Retrieve a Share', description = 'Enter the 6-digit code to access shared content.' }) {
   const [share, setShare] = useState(null);
   const [textContent, setTextContent] = useState(null);
   const [sessionToken, setSessionToken] = useState('');

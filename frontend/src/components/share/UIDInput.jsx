@@ -47,8 +47,8 @@ export default function UIDInput({ onSubmit, isLoading }) {
           onChange={handleChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="0000 0000 0000"
-          maxLength={14}
+          placeholder="000 000"
+          maxLength={7}
           className="uid-input-field"
           autoComplete="off"
         />
@@ -65,7 +65,7 @@ export default function UIDInput({ onSubmit, isLoading }) {
         </button>
       </motion.div>
       <p className="uid-helper-text">
-        Enter the 12-digit share code to retrieve files or text
+        Enter the 6-digit share code to retrieve files or text
       </p>
     </form>
   );

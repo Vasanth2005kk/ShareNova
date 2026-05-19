@@ -12,7 +12,7 @@ class TextShareCreate(BaseModel):
     title: str | None = Field(default=None, max_length=200)
     content: str = Field(min_length=1, max_length=500000)
     language: str | None = Field(default=None, max_length=50)
-    expiresIn: str | None = Field(default=None, pattern=r"^(1h|6h|24h|7d|30d)$")
+    expiresIn: str | None = Field(default=None, pattern=r"^(30m|1h|6h|24h|7d|30d)$")
     password: str | None = Field(default=None, min_length=4, max_length=128)
 
 

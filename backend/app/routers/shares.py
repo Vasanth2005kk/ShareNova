@@ -131,7 +131,7 @@ async def get_share(
     if not is_valid_uid(clean_uid):
         return JSONResponse(
             status_code=400,
-            content={"success": False, "error": "Invalid UID format — must be 12 digits"},
+            content={"success": False, "error": "Invalid UID format - must be 6 digits"},
         )
 
     share = await share_service.get_share_by_uid(db, clean_uid)

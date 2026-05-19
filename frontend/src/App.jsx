@@ -20,6 +20,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/text', element: <TextPage /> },
+      { path: '/text/:sessionId', element: <TextPage /> },
     ],
   },
 ]);

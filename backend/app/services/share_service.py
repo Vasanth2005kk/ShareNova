@@ -18,6 +18,7 @@ from app.services import storage_service
 # ─── Expiry mapping ──────────────────────────────────────
 
 EXPIRY_MAP: dict[str, timedelta] = {
+    "30m": timedelta(minutes=30),
     "1h": timedelta(hours=1),
     "6h": timedelta(hours=6),
     "24h": timedelta(hours=24),

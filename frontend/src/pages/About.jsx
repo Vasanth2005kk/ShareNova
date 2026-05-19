@@ -37,7 +37,7 @@ const steps = [
   {
     step: '04',
     title: 'Receive with the code',
-    lines: ['Enter the 12-digit code.', 'Press the arrow to open.'],
+    lines: ['Enter the 6-digit code.', 'Press the arrow to open.'],
     image: '/about/step-receive.png',
     alt: 'Receive input with the arrow button highlighted.',
   },
@@ -55,7 +55,7 @@ const features = [
     icon: FileText,
   },
   {
-    title: '12-digit code',
+    title: '6-digit code',
     description: 'Only people with the code can open it.',
     icon: Lock,
   },

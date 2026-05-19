@@ -31,7 +31,7 @@ class Share(Base):
     __tablename__ = "shares"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    uid: Mapped[str] = mapped_column(String(12), unique=True, nullable=False, index=True)
+    uid: Mapped[str] = mapped_column(String(6), unique=True, nullable=False, index=True)
     type: Mapped[ShareType] = mapped_column(Enum(ShareType, name="share_type"), nullable=False)
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True)

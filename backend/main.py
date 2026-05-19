@@ -10,6 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
@@ -89,25 +90,30 @@ app = FastAPI(
 
 # ─── Rate limiter ────────────────────────────────────────
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 # ─── Middleware (order matters — outermost first) ────────
 app.add_middleware(SecurityHeadersMiddleware)
+frontend_origin = settings.FRONTEND_URL.rstrip("/")
+frontend_origin_127 = frontend_origin.replace("localhost", "127.0.0.1")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=[frontend_origin, frontend_origin_127],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "X-Session-Token"],
 )
 
 # ─── Override FastAPI's default 422 with 400 ─────────────
-@app.exception_handler(422)
-async def validation_exception_handler(request: Request, exc):
-    """Convert FastAPI's 422 Unprocessable Entity to 400 with our envelope."""
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Convert FastAPI validation failures to 400 with our envelope."""
+    details = exc.errors()
     return JSONResponse(
         status_code=400,
-        content={"success": False, "error": "Validation failed", "details": str(exc.detail) if hasattr(exc, 'detail') else str(exc)},
+        content={"success": False, "error": "Validation failed", "details": details},
     )
 
 # ─── Global exception handler ───────────────────────────

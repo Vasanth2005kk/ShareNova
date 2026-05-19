@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { FileText, Loader2, Sparkles, Save, Info } from 'lucide-react';
+import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
+import { FileText, Loader2, Sparkles, Save, Info, Copy, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
 import { createTextShare } from '@/lib/api';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
+import { formatUID, generateUID, normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Text.css';
 
 const EXPIRY_MS = {
@@ -25,7 +26,12 @@ function buildSessionExpiry(startMs, expiresIn) {
 
 export default function TextPage() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { sessionId } = useParams();
   const initialState = location.state || {};
+  const hasSessionSeed = Boolean(
+    initialState.title || initialState.password || initialState.expiresIn
+  );
 
   const [content, setContent] = useState('');
   const [title, setTitle] = useState(initialState.title || '');
@@ -35,30 +41,53 @@ export default function TextPage() {
   });
   
   const [state, setState] = useState('idle');
-  const [uid, setUid] = useState('');
+  const [shareUid, setShareUid] = useState('');
+  const [sessionUid, setSessionUid] = useState('');
   const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState('');
   const [sessionExpiresAt, setSessionExpiresAt] = useState(null);
   const [sessionPassword, setSessionPassword] = useState('');
   const [sessionActive, setSessionActive] = useState(true);
+  const [sessionCopied, setSessionCopied] = useState(false);
 
   // Persistent session start — captured once on mount, never resets when modal opens/closes
   const sessionStart = useRef(null);
   
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
-  const isNewSession = Boolean(initialState.title || initialState.password || initialState.expiresIn);
+  const isNewSession = hasSessionSeed;
+  const storageKey = sessionUid ? `sharenova_editor_state_${sessionUid}` : null;
+
+  useEffect(() => {
+    const cleanSessionId = sessionId ? normalizeUID(sessionId) : '';
+    if (cleanSessionId && isValidUID(cleanSessionId)) {
+      setSessionUid(cleanSessionId);
+      return;
+    }
+
+    if (hasSessionSeed) {
+      const nextUid = generateUID();
+      setSessionUid(nextUid);
+      navigate(`/text/${nextUid}`, { replace: true, state: initialState });
+      return;
+    }
+
+    setSessionUid('');
+  }, [sessionId, hasSessionSeed, navigate, initialState]);
 
   // ─── Persistence Logic ───────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem('sharenova_editor_state');
+    if (!storageKey) return;
+    sessionStart.current = null;
+    const saved = localStorage.getItem(storageKey);
     let parsed = null;
     if (!isNewSession && saved) {
       try {
         parsed = JSON.parse(saved);
         if (parsed.title) setTitle(parsed.title);
+        if (parsed.content) setContent(parsed.content);
         if (parsed.options) setOptions(parsed.options);
-        if (parsed.uid) setUid(parsed.uid);
+        if (parsed.shareUid) setShareUid(parsed.shareUid);
         if (parsed.expiresAt) setExpiresAt(parsed.expiresAt);
         if (parsed.sessionStart) sessionStart.current = parsed.sessionStart;
       } catch (e) {
@@ -67,7 +96,7 @@ export default function TextPage() {
     }
 
     if (isNewSession) {
-      localStorage.removeItem('sharenova_editor_state');
+      localStorage.removeItem(storageKey);
     }
 
     if (!sessionStart.current) {
@@ -91,21 +120,23 @@ export default function TextPage() {
       options.password ||
       '';
     setSessionPassword(nextSessionPassword);
-  }, []);
+  }, [storageKey, isNewSession]);
 
   useEffect(() => {
-    if (!sessionActive) return;
+    if (!sessionActive || !storageKey) return;
     const stateToSave = {
       title,
+      content,
       options,
-      uid,
+      shareUid,
+      sessionUid,
       expiresAt,
       sessionStart: sessionStart.current,
       sessionExpiresAt,
       sessionPassword
     };
-    localStorage.setItem('sharenova_editor_state', JSON.stringify(stateToSave));
-  }, [title, options, uid, expiresAt, sessionExpiresAt, sessionPassword, sessionActive]);
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+  }, [title, content, options, shareUid, sessionUid, expiresAt, sessionExpiresAt, sessionPassword, sessionActive, storageKey]);
 
 
 
@@ -123,7 +154,7 @@ export default function TextPage() {
       });
 
       if (res.success && res.data) {
-        setUid(res.data.uid);
+        setShareUid(res.data.uid);
         setExpiresAt(res.data.expires_at || res.data.expiresAt || null);
         setState('done');
       } else {
@@ -140,14 +171,19 @@ export default function TextPage() {
     setContent('');
     setTitle('');
     setState('idle');
-    setUid('');
+    setShareUid('');
     setExpiresAt(null);
     setError('');
+    const nextSessionUid = generateUID();
+    setSessionUid(nextSessionUid);
+    navigate(`/text/${nextSessionUid}`, { replace: true, state: initialState });
     sessionStart.current = Date.now();
     setSessionExpiresAt(buildSessionExpiry(sessionStart.current, options.expiresIn));
     setSessionPassword(options.password || '');
     setSessionActive(true);
-    localStorage.removeItem('sharenova_editor_state');
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
   }
 
   function deleteSession() {
@@ -155,7 +191,8 @@ export default function TextPage() {
     setTitle('');
     setOptions({ expiresIn: initialState.expiresIn || '24h', password: '' });
     setState('idle');
-    setUid('');
+    setShareUid('');
+    setSessionUid('');
     setExpiresAt(null);
     setError('');
     setShowDetails(false);
@@ -163,11 +200,32 @@ export default function TextPage() {
     setSessionExpiresAt(null);
     setSessionPassword('');
     setSessionActive(false);
-    localStorage.removeItem('sharenova_editor_state');
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
+    navigate('/text', { replace: true });
+  }
+
+  async function copySessionUid() {
+    if (!sessionUid) return;
+    try {
+      await navigator.clipboard.writeText(sessionUid);
+      setSessionCopied(true);
+      setTimeout(() => setSessionCopied(false), 2000);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = sessionUid;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setSessionCopied(true);
+      setTimeout(() => setSessionCopied(false), 2000);
+    }
   }
 
   // Check if we are in "active editing" mode (from home or loaded)
-  const isEditing = sessionActive && (initialState.title || content.length > 0 || state === 'done');
+  const isEditing = sessionActive && (sessionUid || title || content.length > 0 || state === 'done');
 
   return (
     <div className="page-split">
@@ -197,9 +255,9 @@ export default function TextPage() {
           </div>
         ) : (
           <div className="word-sheet-container">
-            {state === 'done' && uid ? (
+            {state === 'done' && shareUid ? (
               <div className="editor-success-view">
-                <UIDDisplay uid={uid} expiresAt={expiresAt} />
+                <UIDDisplay uid={shareUid} expiresAt={expiresAt} />
                 <button onClick={reset} className="page-split__btn-secondary new-sheet-button">
                   Create New Sheet
                 </button>
@@ -211,7 +269,29 @@ export default function TextPage() {
                 className="word-sheet"
               >
                 <div className="word-sheet-header">
-                  <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
+                  <div className="word-sheet-title-group">
+                    <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
+                    {sessionUid && (
+                      <div className="session-uid-row">
+                        <span className="session-uid-label">Session ID</span>
+                        <div className="session-uid-chip">
+                          <span className="session-uid-code">{formatUID(sessionUid)}</span>
+                          <button
+                            type="button"
+                            onClick={copySessionUid}
+                            className="session-uid-copy"
+                            title="Copy session ID"
+                          >
+                            {sessionCopied ? (
+                              <Check size={14} color="#34d399" />
+                            ) : (
+                              <Copy size={14} color="var(--text-muted)" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div className='Details-con'>
                     <button 
                       onClick={() => setShowDetails(!showDetails)}
@@ -244,6 +324,12 @@ export default function TextPage() {
                   placeholder="Start typing your document here..."
                   className="word-sheet__textarea"
                 />
+
+                {error && (
+                  <div className="save-error" role="alert">
+                    {error}
+                  </div>
+                )}
 
                 <div className="word-sheet-footer">
                   <span className="char-counter">

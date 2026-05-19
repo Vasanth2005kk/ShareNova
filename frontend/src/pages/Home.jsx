@@ -99,7 +99,7 @@ export default function HomePage() {
         >
           The most secure way to share files and text.{' '}
           <span className="hero-description-highlight">No accounts, no public links.</span>{' '}
-          Just a 12-digit code that auto-expires.
+          Just a 6-digit code that auto-expires.
         </motion.p>
 
         {/* Single Main Button */}
