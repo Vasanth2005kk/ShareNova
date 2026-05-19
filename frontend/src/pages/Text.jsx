@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { FileText, Loader2, Sparkles, Save, Info, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Sparkles, Save, Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
@@ -159,9 +158,6 @@ export default function TextPage() {
     setUid('');
     setExpiresAt(null);
     setError('');
-    setSearch('');
-    setSearchResults(null);
-    setIsSearching(false);
     setShowDetails(false);
     sessionStart.current = null;
     setSessionExpiresAt(null);

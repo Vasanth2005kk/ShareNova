@@ -36,15 +36,10 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         className="modal-content"
       >
-<<<<<<< HEAD
         <h2 className="modal-title">Create Editor</h2>
-=======
         <button onClick={onClose} className="modal-close">
           <X size={20} />
-        </button>
-        <h2 className="modal-title">Editor Config</h2>
->>>>>>> 1e83864f400c485ec628a455ee8ba12d2e0c3e11
-        
+        </button>        
         <div className="modal-form">
           <div className="form-group">
             <label className="form-label">Title</label>
