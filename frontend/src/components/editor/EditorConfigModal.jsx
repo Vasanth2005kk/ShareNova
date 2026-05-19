@@ -36,7 +36,7 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         className="modal-content"
       >
-        <h2 className="modal-title">Editor Config</h2>
+        <h2 className="modal-title">Create Editor</h2>
         
         <div className="modal-form">
           <div className="form-group">
@@ -119,16 +119,7 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Attachments</label>
-              <button
-                onClick={() => onChange({...data, fileEnabled: !data.fileEnabled})}
-                className={`toggle-button ${data.fileEnabled ? 'active' : ''}`}
-              >
-                {data.fileEnabled ? <Upload size={16} /> : null}
-                {data.fileEnabled ? 'Enabled' : 'Disabled'}
-              </button>
-            </div>
+            
           </div>
 
           <button

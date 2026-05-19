@@ -1,10 +1,10 @@
 """
-files.py — File download route via presigned URL redirect.
+files.py — File download route from local storage.
 Replaces: backend/src/routes/files.ts
 """
 
 from fastapi import APIRouter, Depends, Request, Header
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -38,8 +38,15 @@ async def download_file(
                 content={"success": False, "error": "Authentication required"},
             )
 
-    # Generate presigned URL (60s TTL) and redirect
-    url = await storage_service.get_presigned_download_url(
-        file["storage_key"], file["filename"]
+    file_path = storage_service.get_file_path(file["storage_key"])
+    if not file_path:
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "error": "File not found"},
+        )
+
+    return FileResponse(
+        path=file_path,
+        media_type=file.get("mime_type") or "application/octet-stream",
+        filename=file["filename"],
     )
-    return RedirectResponse(url=url)

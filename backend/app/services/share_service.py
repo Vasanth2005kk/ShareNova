@@ -41,14 +41,14 @@ async def create_file_share(
     expires_in: str | None = None,
     password: str | None = None,
 ) -> str:
-    """Create a file share: upload files to R2, create DB records, return UID."""
+    """Create a file share: upload files to storage, create DB records, return UID."""
     uid = await generate_uid(db)
     expires_at = _calculate_expiry(expires_in)
     is_private = bool(password)
     pw_hash = await hash_password(password) if password else None
     total_size = sum(f["size"] for f in files)
 
-    # Upload all files to R2
+    # Upload all files to storage
     file_records = []
     for f in files:
         storage_key = storage_service.generate_storage_key(uid, f["filename"])
@@ -209,6 +209,7 @@ async def get_file_for_download(db: AsyncSession, file_id: str) -> dict | None:
     return {
         "storage_key": file.storage_key,
         "filename": file.filename,
+        "mime_type": file.mime_type,
         "share_uid": file.share.uid,
         "is_private": file.share.is_private,
     }

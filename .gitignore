@@ -10,6 +10,7 @@ build/
 .env.*.local
 backend/.env
 frontend/.env
+backend/storage/
 .vscode/
 .idea/
 *.swp
