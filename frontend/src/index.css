@@ -230,14 +230,6 @@ button {
   gap: 0.75rem;
 }
 
-.page-split__sidebar-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
 .page-split__search {
   width: 100%;
   background: var(--surface-1);

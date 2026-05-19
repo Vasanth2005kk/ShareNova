@@ -1,7 +1,6 @@
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import Navbar from '@/components/common/Navbar';
 import HomePage from '@/pages/Home';
-import UploadPage from '@/pages/Upload';
 import TextPage from '@/pages/Text';
 
 function RootLayout() {
@@ -20,7 +19,6 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <HomePage /> },
-      { path: '/upload', element: <UploadPage /> },
       { path: '/text', element: <TextPage /> },
     ],
   },

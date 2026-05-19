@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Sparkles, Sun, Moon } from 'lucide-react';
+import { FileText, Sparkles, Sun, Moon } from 'lucide-react';
 import '@/styles/Navbar.css';
 
 const navLinks = [
-  { href: '/upload', label: 'Upload', icon: Upload },
   { href: '/text', label: 'Editor', icon: FileText },
 ];
 
