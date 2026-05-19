@@ -4,8 +4,9 @@ import { FileText, Loader2, Sparkles, Save, Info, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import UIDDisplay from '@/components/share/UIDDisplay';
+import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
-import { createTextShare, getShareByUID, getTextContent } from '@/lib/api';
+import { createTextShare } from '@/lib/api';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
 import '@/styles/Text.css';
 
@@ -28,9 +29,7 @@ export default function TextPage() {
   // Persistent session start — captured once on mount, never resets when modal opens/closes
   const sessionStart = useRef(null);
   
-  const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
 
   // ─── Persistence Logic ───────────────────────────────────
@@ -64,46 +63,7 @@ export default function TextPage() {
     localStorage.setItem('sharenova_editor_state', JSON.stringify(stateToSave));
   }, [title, options, uid, expiresAt]);
 
-  // ─── Search Logic ─────────────────────────────────────────
-  const handleSearch = async (val) => {
-    setSearch(val);
-    if (val.length === 12) {
-      setIsSearching(true);
-      try {
-        const res = await getShareByUID(val);
-        if (res.success && res.data) {
-          setSearchResults(res.data);
-        } else {
-          setSearchResults(null);
-        }
-      } catch (err) {
-        setSearchResults(null);
-      } finally {
-        setIsSearching(false);
-      }
-    } else {
-      setSearchResults(null);
-    }
-  };
 
-  const loadShareContent = async () => {
-    if (!searchResults || searchResults.type !== 'TEXT') return;
-    setIsSearching(true);
-    try {
-      const contentRes = await getTextContent(searchResults.uid);
-      if (contentRes.success && contentRes.data) {
-        setContent(contentRes.data);
-        setTitle(searchResults.title || '');
-        setExpiresAt(searchResults.expires_at || searchResults.expiresAt || null);
-        setSearchResults(null);
-        setSearch('');
-      }
-    } catch (err) {
-      console.error('Failed to load content', err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   async function handleSubmit() {
     if (!content.trim()) return;
@@ -164,8 +124,8 @@ export default function TextPage() {
               <div className="empty-text-group">
                 <h2 className="empty-title">Word Sheet Ready</h2>
                 <p className="empty-desc">
-                  To begin, use the <strong>Create Editor</strong> button on the home page or 
-                  <strong>Search</strong> for a 12-digit code in the sidebar to join an existing sheet.
+                  To begin, use the <strong>Create Editor</strong> button on the home page.
+                  You can also upload files from the sidebar.
                 </p>
               </div>
               <Link to="/" className="home-link">
@@ -244,48 +204,9 @@ export default function TextPage() {
       {/* ── Right 20% Sidebar ── */}
       <aside className="page-split__sidebar">
         <div className="page-split__sidebar-card">
-          <span className="page-split__sidebar-label">Retrieve Share</span>
-          <input
-            id="text-search"
-            type="text"
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Enter 12-digit code…"
-            className="page-split__search"
-            maxLength={12}
-          />
+          <span className="page-split__sidebar-label">Upload Files</span>
+          <DropZone files={selectedFiles} onFilesChange={setSelectedFiles} />
         </div>
-
-        {isSearching && (
-          <div className="page-split__sidebar-card">
-            <div className="loader-wrapper">
-              <Loader2 className="animate-spin" size={20} color="var(--text-muted)" />
-            </div>
-          </div>
-        )}
-
-        {searchResults && (
-          <div className="page-split__sidebar-card">
-            <span className="page-split__sidebar-label">Found Share</span>
-            <div className="result-card-body">
-              <div className="result-title">
-                {searchResults.title || 'Untitled Share'}
-              </div>
-              <div>
-                <span className={`type-tag ${searchResults.type === 'TEXT' ? 'text' : 'file'}`}>
-                  {searchResults.type}
-                </span>
-              </div>
-              <button 
-                onClick={loadShareContent}
-                disabled={searchResults.type !== 'TEXT'}
-                className="load-button"
-              >
-                {searchResults.type === 'TEXT' ? 'Load into Editor' : 'File Only'}
-              </button>
-            </div>
-          </div>
-        )}
       </aside>
     </div>
   );

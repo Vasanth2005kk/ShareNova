@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, ArrowRight, FileText, Lock, Clock, AlertCircle } from 'lucide-react';
+import { Upload, ArrowRight, FileText, Lock, Clock, AlertCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import '@/styles/EditorConfigModal.css';
@@ -36,6 +36,9 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         className="modal-content"
       >
+        <button onClick={onClose} className="modal-close">
+          <X size={20} />
+        </button>
         <h2 className="modal-title">Editor Config</h2>
         
         <div className="modal-form">
