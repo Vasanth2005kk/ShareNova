@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Upload as UploadIcon, Loader2 } from 'lucide-react';
 import DropZone from '@/components/upload/DropZone';
@@ -7,14 +8,25 @@ import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import { createFileShare } from '@/lib/api';
 
+const FILE_TYPES = ['All', 'Images', 'Documents', 'Archives', 'Video', 'Audio'];
+
 export default function UploadPage() {
+  const location = useLocation();
+  const initialState = location.state || {};
+
   const [files, setFiles] = useState([]);
-  const [options, setOptions] = useState({ expiresIn: '24h' });
+  const [options, setOptions] = useState({
+    expiresIn: initialState.expiresIn || '24h',
+    password: initialState.password || ''
+  });
   const [state, setState] = useState('idle');
   const [progress, setProgress] = useState(0);
   const [uid, setUid] = useState('');
   const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [maxSize, setMaxSize] = useState(50);
 
   async function handleUpload() {
     if (files.length === 0) return;
@@ -68,49 +80,69 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-2xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-          {state === 'done' && uid ? (
-            <>
-              <UIDDisplay uid={uid} expiresAt={expiresAt} />
-              <button onClick={reset} className="w-full py-3.5 rounded-xl bg-(--surface-2) border border-(--border-soft) text-(--text-muted) hover:bg-(--surface-4) hover:text-(--text-primary) transition-all text-sm font-medium">
-                Share more files
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="text-center">
-                <h1 className="text-3xl font-bold text-(--text-primary) mb-2">Upload Files</h1>
-                <p className="text-(--text-muted)">Drop your files and get a secure share code.</p>
-              </div>
+    <div className="page-split">
+      {/* ── Left 80% ── */}
+      <div className="page-split__main">
+        {state === 'done' && uid ? (
+          <>
+            <UIDDisplay uid={uid} expiresAt={expiresAt} />
+            <button onClick={reset} className="page-split__btn-secondary">
+              Share more files
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="page-split__heading">
+              <h1>Upload Files</h1>
+              <p>Drop your files and get a secure share code.</p>
+            </div>
 
-              <DropZone files={files} onFilesChange={setFiles} />
+            <DropZone files={files} onFilesChange={setFiles} />
 
-              {files.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                  <div className="p-5 rounded-2xl bg-(--surface-1) border border-(--border-subtle) space-y-4">
-                    <h3 className="text-sm font-medium text-(--text-secondary)">Share Options</h3>
-                    <ShareOptionsForm options={options} onChange={setOptions} />
-                  </div>
+            {files.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="page-split__fields"
+              >
+                <div className="page-split__options-box">
+                  <h3>Share Options</h3>
+                  <ShareOptionsForm options={options} onChange={setOptions} />
+                </div>
 
-                  {state === 'uploading' && <ProgressBar progress={progress} label="Uploading..." />}
-                  {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+                {state === 'uploading' && <ProgressBar progress={progress} label="Uploading..." />}
+                {error && <p className="page-split__error">{error}</p>}
 
-                  <button
-                    onClick={handleUpload}
-                    disabled={state === 'uploading'}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium disabled:opacity-50 hover:shadow-xl hover:shadow-orange-500/25 transition-all hover:scale-[1.01] active:scale-[0.99]"
-                  >
-                    {state === 'uploading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadIcon className="w-5 h-5" />}
-                    {state === 'uploading' ? 'Uploading...' : 'Upload & Get Code'}
-                  </button>
-                </motion.div>
-              )}
-            </>
-          )}
-        </motion.div>
+                <button
+                  id="upload-submit"
+                  onClick={handleUpload}
+                  disabled={state === 'uploading'}
+                  className="page-split__btn-primary"
+                >
+                  {state === 'uploading'
+                    ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                    : <UploadIcon size={18} />}
+                  {state === 'uploading' ? 'Uploading...' : 'Upload & Get Code'}
+                </button>
+              </motion.div>
+            )}
+          </>
+        )}
       </div>
+
+      <aside className="page-split__sidebar">
+        <div className="page-split__sidebar-card">
+          <span className="page-split__sidebar-label">Search Files</span>
+          <input
+            id="upload-search"
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name…"
+            className="page-split__search"
+          />
+        </div>
+      </aside>
     </div>
   );
 }

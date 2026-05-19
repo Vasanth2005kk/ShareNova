@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, ShieldCheck } from 'lucide-react';
+import '@/styles/PasswordGate.css';
 
 export default function PasswordGate({ onVerify, isLoading }) {
   const [password, setPassword] = useState('');
@@ -17,30 +18,30 @@ export default function PasswordGate({ onVerify, isLoading }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="max-w-md mx-auto text-center"
+      className="password-gate-container"
     >
-      <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/20">
-        <ShieldCheck className="w-7 h-7 text-amber-400" />
+      <div className="password-gate-icon-wrapper">
+        <ShieldCheck size={28} color="#fbbf24" />
       </div>
-      <h2 className="text-xl font-semibold text-(--text-primary) mb-2">Password Protected</h2>
-      <p className="text-sm text-(--text-muted) mb-6">This share requires a password to access.</p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-dim)" />
+      <h2 className="password-gate-title">Password Protected</h2>
+      <p className="password-gate-desc">This share requires a password to access.</p>
+      <form onSubmit={handleSubmit} className="password-gate-form">
+        <div className="password-gate-input-wrapper">
+          <Lock className="password-gate-input-icon" />
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter password"
-            className="w-full bg-(--surface-2) border border-(--border-soft) rounded-xl pl-11 pr-4 py-3.5 text-(--text-primary) placeholder:text-(--text-placeholder) focus:outline-none focus:border-orange-500/30 transition-all"
+            className="password-gate-input"
             autoFocus
           />
         </div>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="password-gate-error">{error}</p>}
         <button
           type="submit"
           disabled={!password || isLoading}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium disabled:opacity-40 hover:shadow-lg hover:shadow-orange-500/25 transition-all"
+          className="password-gate-submit"
         >
           {isLoading ? 'Verifying...' : 'Unlock'}
         </button>

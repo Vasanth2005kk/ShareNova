@@ -1,15 +1,14 @@
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import Navbar from '@/components/common/Navbar';
 import HomePage from '@/pages/Home';
-import StartPage from '@/pages/Start';
-import RetrievePage from '@/pages/Retrieve';
-import AboutPage from '@/pages/About';
+import UploadPage from '@/pages/Upload';
+import TextPage from '@/pages/Text';
 
 function RootLayout() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 pt-16">
+      <main className="main-content">
         <Outlet />
       </main>
     </>
@@ -21,11 +20,8 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <HomePage /> },
-      { path: '/about', element: <AboutPage /> },
-      { path: '/start', element: <StartPage /> },
-      { path: '/upload', element: <StartPage /> },
-      { path: '/text', element: <StartPage /> },
-      { path: '/retrieve', element: <RetrievePage /> },
+      { path: '/upload', element: <UploadPage /> },
+      { path: '/text', element: <TextPage /> },
     ],
   },
 ]);

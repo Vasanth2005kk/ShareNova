@@ -331,17 +331,3 @@ uid = decimal_str.zfill(12)
 ```
 
 ---
-
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,2,20,24,30&height=120&section=footer&fontSize=0" width="100%"/>
-
-**Built with 💜 by [Numan Khan](https://github.com/numankhan2007)**
-
-</div>

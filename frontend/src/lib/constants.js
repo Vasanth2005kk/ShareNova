@@ -1,6 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const EXPIRY_OPTIONS = [
+  { value: '30m', label: '30 Minutes' },
   { value: '1h', label: '1 Hour' },
   { value: '6h', label: '6 Hours' },
   { value: '24h', label: '24 Hours' },

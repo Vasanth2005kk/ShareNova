@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Check, FileText } from 'lucide-react';
 import CountdownTimer from '@/components/common/CountdownTimer';
+import '@/styles/Share.css';
 
 export default function TextShareView({ share, content }) {
   const [copied, setCopied] = useState(false);
@@ -16,31 +17,31 @@ export default function TextShareView({ share, content }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+      className="share-view-container"
     >
-      <div className="flex items-center justify-between">
+      <div className="share-header">
         <div>
-          <h2 className="text-xl font-semibold text-(--text-primary) flex items-center gap-2">
-            <FileText className="w-5 h-5 text-orange-400" />
+          <h2 className="share-title">
+            <FileText size={20} color="#fb923c" />
             {content.title || 'Shared Text'}
           </h2>
           {content.language && content.language !== 'plaintext' && (
-            <p className="text-sm text-(--text-muted) mt-1">{content.language}</p>
+            <p className="share-subtitle">{content.language}</p>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="action-bar">
           {share.expiresAt && <CountdownTimer expiresAt={share.expiresAt} />}
           <button
             onClick={copyContent}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-(--surface-3) border border-(--border-soft) text-sm text-(--text-muted) hover:text-(--text-primary) hover:bg-(--surface-4) transition-all"
+            className="secondary-button"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check size={16} color="#34d399" /> : <Copy size={16} />}
             {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
       </div>
-      <div className="rounded-xl bg-(--surface-1) border border-(--border-subtle) overflow-hidden">
-        <pre className="p-6 text-sm text-(--text-secondary) font-mono whitespace-pre-wrap break-words overflow-auto max-h-[60vh] leading-relaxed">
+      <div className="text-content-box">
+        <pre className="text-content">
           {content.content}
         </pre>
       </div>
