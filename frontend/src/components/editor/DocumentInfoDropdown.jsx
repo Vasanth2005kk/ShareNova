@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, X, FileText, Trash2 } from 'lucide-react';
+import { Info, X, FileText, Trash2, Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import CountdownTimer from '@/components/common/CountdownTimer';
 import '@/styles/DocumentInfoDropdown.css';
+import { formatUID } from '@/lib/uid';
 
 export default function DocumentInfoDropdown({ 
   isOpen, 
@@ -17,7 +18,8 @@ export default function DocumentInfoDropdown({
   expiresAt,
   sessionExpiresAt,
   sessionPassword,
-  sessionStart
+  sessionStart,
+  sessionUid
 }) {
   // Local draft state to prevent instant updates to the main editor
   const [draftTitle, setDraftTitle] = useState(title);
@@ -25,6 +27,7 @@ export default function DocumentInfoDropdown({
   const [showDeletePrompt, setShowDeletePrompt] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [sessionCopied, setSessionCopied] = useState(false);
 
   // Sync local state when dropdown opens
   useEffect(() => {
@@ -55,6 +58,24 @@ export default function DocumentInfoDropdown({
     onClose();
   };
 
+  async function copySessionUid() {
+    if (!sessionUid) return;
+    try {
+      await navigator.clipboard.writeText(sessionUid);
+      setSessionCopied(true);
+      setTimeout(() => setSessionCopied(false), 2000);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = sessionUid;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setSessionCopied(true);
+      setTimeout(() => setSessionCopied(false), 2000);
+    }
+  }
+
   const effectiveExpiry = sessionExpiresAt || expiresAt;
 
   return (
@@ -83,6 +104,26 @@ export default function DocumentInfoDropdown({
             </div>
 
             <div className="dropdown-body">
+              {sessionUid && (
+                <div className="session-uid-row">
+                  <span className="session-uid-label">Sheet ID</span> : 
+                  <div className="session-uid-chip">
+                    <span className="session-uid-code">{formatUID(sessionUid)}</span>
+                    <button
+                      type="button"
+                      onClick={copySessionUid}
+                      className="session-uid-copy"
+                      title="Copy session ID"
+                    >
+                      {sessionCopied ? (
+                        <Check size={14} color="#f97316" />
+                      ) : (
+                        <Copy size={14} color="var(--text-muted)" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Document Title Edit */}
               <div>
                 <label className="section-label">Document Title</label>
@@ -121,7 +162,7 @@ export default function DocumentInfoDropdown({
 
               {showDeletePrompt && (
                 <div className="delete-confirm">
-                  <label className="delete-label">Enter session password to delete</label>
+                  <label className="delete-label">Enter sheet password to delete</label>
                   <input
                     type="password"
                     value={deletePassword}
@@ -150,13 +191,13 @@ export default function DocumentInfoDropdown({
                   className="action-button clear-button"
                 >
                   <Trash2 size={14} />
-                  Delete Session
+                  Delete
                 </button>
                 <button 
                   onClick={handleDone}
                   className="action-button done-button"
                 >
-                  Done Editing
+                  Save
                 </button>
               </div>
             </div>

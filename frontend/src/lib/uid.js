@@ -10,7 +10,7 @@ export function formatUID(uid) {
   for (let i = 0; i < clean.length; i += UID_GROUP) {
     parts.push(clean.slice(i, i + UID_GROUP));
   }
-  return parts.join(' ');
+  return parts.join('');
 }
 
 /**

@@ -32,7 +32,7 @@ class Share(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     uid: Mapped[str] = mapped_column(String(6), unique=True, nullable=False, index=True)
-    type: Mapped[ShareType] = mapped_column(Enum(ShareType, name="share_type"), nullable=False)
+    type: Mapped[ShareType] = mapped_column(Enum(ShareType, name="share_type", native_enum=False), nullable=False)
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

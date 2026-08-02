@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
-import { FileText, Loader2, Sparkles, Save, Info, Copy, Check } from 'lucide-react';
+import { FileText, Loader2, Sparkles, Save, Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
 import { createTextShare } from '@/lib/api';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
-import { formatUID, generateUID, normalizeUID, isValidUID } from '@/lib/uid';
+import { generateUID, normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Text.css';
 
 const EXPIRY_MS = {
@@ -48,7 +48,6 @@ export default function TextPage() {
   const [sessionExpiresAt, setSessionExpiresAt] = useState(null);
   const [sessionPassword, setSessionPassword] = useState('');
   const [sessionActive, setSessionActive] = useState(true);
-  const [sessionCopied, setSessionCopied] = useState(false);
 
   // Persistent session start — captured once on mount, never resets when modal opens/closes
   const sessionStart = useRef(null);
@@ -206,23 +205,7 @@ export default function TextPage() {
     navigate('/text', { replace: true });
   }
 
-  async function copySessionUid() {
-    if (!sessionUid) return;
-    try {
-      await navigator.clipboard.writeText(sessionUid);
-      setSessionCopied(true);
-      setTimeout(() => setSessionCopied(false), 2000);
-    } catch {
-      const el = document.createElement('textarea');
-      el.value = sessionUid;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-      setSessionCopied(true);
-      setTimeout(() => setSessionCopied(false), 2000);
-    }
-  }
+
 
   // Check if we are in "active editing" mode (from home or loaded)
   const isEditing = sessionActive && (sessionUid || title || content.length > 0 || state === 'done');
@@ -271,26 +254,6 @@ export default function TextPage() {
                 <div className="word-sheet-header">
                   <div className="word-sheet-title-group">
                     <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
-                    {sessionUid && (
-                      <div className="session-uid-row">
-                        <span className="session-uid-label">Session ID</span>
-                        <div className="session-uid-chip">
-                          <span className="session-uid-code">{formatUID(sessionUid)}</span>
-                          <button
-                            type="button"
-                            onClick={copySessionUid}
-                            className="session-uid-copy"
-                            title="Copy session ID"
-                          >
-                            {sessionCopied ? (
-                              <Check size={14} color="#34d399" />
-                            ) : (
-                              <Copy size={14} color="var(--text-muted)" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                   <div className='Details-con'>
                     <button 
@@ -314,6 +277,7 @@ export default function TextPage() {
                       sessionExpiresAt={sessionExpiresAt}
                       sessionPassword={sessionPassword}
                       sessionStart={sessionStart.current}
+                      sessionUid={sessionUid}
                     />
                   </div>
                 </div>

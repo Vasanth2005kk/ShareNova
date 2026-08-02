@@ -96,7 +96,7 @@
 }
 
 .session-uid-label {
-  font-size: 0.625rem;
+  font-size: 0.8rem;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -106,18 +106,15 @@
 .session-uid-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.75rem;
-  background-color: var(--surface-2);
-  border: 1px solid var(--border-soft);
+  gap: 1rem;
 }
 
 .session-uid-code {
-  font-size: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  letter-spacing: 0.2em;
-  color: var(--text-primary);
+  color: #f97316;
+  user-select: none;
 }
 
 .session-uid-copy {

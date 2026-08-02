@@ -9,8 +9,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 2.5rem;
+  gap: 0.25rem;
+  padding: 1rem;
   border-radius: 1.5rem;
   border: 2px dashed var(--border-subtle);
   background-color: var(--surface-1);
