@@ -74,7 +74,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="home-container">
+    <div className="home-container page-split__main">
       {/* Hero Section */}
       <section className="hero-section">
         <motion.div
@@ -121,11 +121,11 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <EditorConfigModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        data={modalData} 
-        onChange={setModalData} 
+      <EditorConfigModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        data={modalData}
+        onChange={setModalData}
       />
 
       {/* Footer gradient */}

@@ -140,6 +140,10 @@
   transition: all 0.2s;
 }
 
+.select-field option {
+  background-color: var(--bg-primary);
+}
+
 .select-field:focus {
   border-color: rgba(249, 115, 22, 0.4);
 }
