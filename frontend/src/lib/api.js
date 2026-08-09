@@ -2,11 +2,16 @@ import { API_URL } from './constants';
 
 async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: { ...options.headers },
-  });
-  return await res.json();
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: { ...options.headers },
+    });
+    return await res.json();
+  } catch (err) {
+    console.error(`API request error on ${endpoint}:`, err);
+    return { success: false, error: err.message || 'Network or server error' };
+  }
 }
 
 // ─── File Share ─────────────────────────────────────────
@@ -26,6 +31,7 @@ export async function createFileShare(files, options) {
 // ─── Text Share ─────────────────────────────────────────
 
 export async function createTextShare(data) {
+  console.log("data in api.js: ", data);
   return request('/api/shares/text', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

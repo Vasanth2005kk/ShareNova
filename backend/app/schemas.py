@@ -3,23 +3,46 @@ schemas.py — Pydantic v2 request/response models.
 Replaces: Zod validation schemas in routes/shares.ts
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ─── Request schemas ─────────────────────────────────────
 
 class TextShareCreate(BaseModel):
     title: str | None = Field(default=None, max_length=200)
-    content: str = Field(min_length=1, max_length=500000)
+    content: str = Field(default="", max_length=500000)
     language: str | None = Field(default=None, max_length=50)
     expiresIn: str | None = Field(default=None, pattern=r"^(30m|1h|6h|24h|7d|30d)$")
-    password: str | None = Field(default=None, min_length=4, max_length=128)
+    password: str | None = Field(default=None, max_length=128)
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def validate_password(cls, v):
+        if v == "" or v is None:
+            return None
+        if isinstance(v, str) and len(v) < 4:
+            raise ValueError("Password must be at least 4 characters")
+        return v
+
+    @field_validator("expiresIn", "title", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        if v == "":
+            return None
+        return v
 
 
 class TextShareUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=200)
     content: str = Field(min_length=0, max_length=500000)
     language: str | None = Field(default=None, max_length=50)
+
+    @field_validator("title", "language", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        if v == "":
+            return None
+        return v
 
 
 class PasswordVerify(BaseModel):

@@ -10,6 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -100,8 +101,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[frontend_origin, frontend_origin_127],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "X-Session-Token"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ─── Override FastAPI's default 422 with 400 ─────────────
@@ -110,7 +111,8 @@ async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     """Convert FastAPI validation failures to 400 with our envelope."""
-    details = exc.errors()
+    details = jsonable_encoder(exc.errors())
+    logger.warning(f"Validation error for {request.url.path}: {details}")
     return JSONResponse(
         status_code=400,
         content={"success": False, "error": "Validation failed", "details": details},
@@ -119,11 +121,16 @@ async def validation_exception_handler(
 # ─── Global exception handler ───────────────────────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled error: {exc}")
-    return JSONResponse(
+    logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+    response = JSONResponse(
         status_code=500,
-        content={"success": False, "error": "Internal server error"},
+        content={"success": False, "error": f"Internal server error: {str(exc)}"},
     )
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 # ─── Routes ──────────────────────────────────────────────
 app.include_router(health.router)
@@ -143,5 +150,4 @@ async def catch_all(path: str):
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run("main:app", host="0.0.0.0", port=settings.PORT, reload=True)

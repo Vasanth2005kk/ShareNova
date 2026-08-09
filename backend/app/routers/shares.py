@@ -145,6 +145,7 @@ async def update_text_share(
             title=body.title,
             language=body.language,
             expires_in="24h",
+            target_uid=clean_uid,
         )
         return JSONResponse(
             status_code=200,

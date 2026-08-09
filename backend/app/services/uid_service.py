@@ -28,7 +28,7 @@ async def generate_uid(db: AsyncSession, max_retries: int = 10) -> str:
     """Generate a unique 6-digit UID, retrying on collision up to max_retries times."""
     for _ in range(max_retries):
         candidate = _generate_uid_candidate()
-        existing = await db.execute(select(Share.id).where(Share.uid == candidate).limit(1))
+        existing = await db.execute(select(Share.id).where(Share.urlid == candidate).limit(1))
         if existing.scalar_one_or_none() is None:
             return candidate
     raise RuntimeError("Failed to generate a unique UID after max retries")

@@ -1,24 +1,57 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, FileText, Lock, Clock, AlertCircle, X } from 'lucide-react';
+import { ArrowRight, FileText, Lock, Clock, AlertCircle, X, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { createTextShare } from '@/lib/api';
 import '@/styles/EditorConfigModal.css';
 
 export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
   const navigate = useNavigate();
   const [showError, setShowError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
   const isValid = data.title.trim() !== '';
 
-  const handleProceed = () => {
-    if (!isValid) {
-      setShowError(true);
-      setTimeout(() => setShowError(false), 3000);
+  const handleProceed = async () => {
+    if (!isValid || isSubmitting) {
+      if (!isValid) {
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+      }
       return;
     }
-    navigate(data.fileEnabled ? '/upload' : '/text', { state: data });
+
+    setIsSubmitting(true);
+    try {
+      if (!data.fileEnabled) {
+        const res = await createTextShare({
+          title: data.title.trim(),
+          password: data.password || undefined,
+          expiresIn: data.expiresIn,
+          content: '',
+        });
+
+        if (res.success && res.data?.uid) {
+          const createdUid = res.data.uid;
+          onClose();
+          navigate(`/text/${createdUid}`, {
+            state: { ...data, shareUid: createdUid, createdInDb: true },
+          });
+          return;
+        }
+      }
+
+      onClose();
+      navigate(data.fileEnabled ? '/upload' : '/text', { state: data });
+    } catch (err) {
+      console.warn('API creation failed, navigating to editor directly:', err);
+      onClose();
+      navigate(data.fileEnabled ? '/upload' : '/text', { state: data });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -118,10 +151,20 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className={`modal-submit ${isValid ? 'valid' : 'invalid'}`}
           >
-            Proceed to Editor
-            <ArrowRight size={20} />
+            {isSubmitting ? (
+              <>
+                <span>Creating Room...</span>
+                <Loader2 size={18} className="animate-spin" />
+              </>
+            ) : (
+              <>
+                <span>Proceed to Editor</span>
+                <ArrowRight size={20} />
+              </>
+            )}
           </button>
         </form>
       </motion.div>

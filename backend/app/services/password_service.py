@@ -3,11 +3,12 @@ password_service.py — bcrypt hashing + in-memory session tokens.
 Replaces: backend/src/services/PasswordService.ts
 """
 
+import asyncio
 import secrets
 import time
 import threading
 
-from passlib.hash import bcrypt
+import bcrypt
 
 from app.config import settings
 
@@ -16,14 +17,27 @@ _session_store: dict[str, dict] = {}
 _lock = threading.Lock()
 
 
+def _hash_sync(password: str) -> str:
+    rounds = settings.BCRYPT_ROUNDS or 12
+    salt = bcrypt.gensalt(rounds=rounds)
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+
+def _verify_sync(password: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
+
+
 async def hash_password(password: str) -> str:
     """Hash a password using bcrypt with configured rounds."""
-    return bcrypt.using(rounds=settings.BCRYPT_ROUNDS).hash(password)
+    return await asyncio.to_thread(_hash_sync, password)
 
 
 async def verify_password(password: str, hashed: str) -> bool:
     """Verify a password against a bcrypt hash."""
-    return bcrypt.verify(password, hashed)
+    return await asyncio.to_thread(_verify_sync, password, hashed)
 
 
 def create_session_token(uid: str) -> str:

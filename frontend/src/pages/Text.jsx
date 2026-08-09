@@ -111,10 +111,16 @@ export default function TextPage() {
   }, []);
 
   useEffect(() => {
-    if (sessionUid && !hasSessionSeed) {
-      fetchRoomFromDb(sessionUid);
+    if (sessionUid) {
+      if (initialState.createdInDb && initialState.shareUid === sessionUid) {
+        setShareUid(sessionUid);
+        setDbStatus('connected');
+        setLastSyncedAt(new Date().toLocaleTimeString());
+      } else if (!hasSessionSeed) {
+        fetchRoomFromDb(sessionUid);
+      }
     }
-  }, [sessionUid, hasSessionSeed, fetchRoomFromDb]);
+  }, [sessionUid, hasSessionSeed, initialState, fetchRoomFromDb]);
 
   // ─── Persistence & Sync Logic ─────────────────────────────
   useEffect(() => {

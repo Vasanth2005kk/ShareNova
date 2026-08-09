@@ -46,7 +46,7 @@ export default function Navbar() {
 
         <div className="navbar-actions">
           <div className="navbar-links">
-            {navLinks.map(({ href, label, icon: Icon }) => {
+            {/* {navLinks.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href;
               return (
                 <Link
@@ -65,7 +65,7 @@ export default function Navbar() {
                   <span className="navbar-link-text">{label}</span>
                 </Link>
               );
-            })}
+            })} */}
           </div>
 
           <button

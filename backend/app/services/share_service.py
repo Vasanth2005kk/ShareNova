@@ -10,8 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Share, File, TextShare, ShareType
-from app.services.uid_service import generate_uid, format_uid
+from app.models import Share, File, TextShare
+from app.services.uid_service import generate_uid, format_uid, is_valid_uid
 from app.services.password_service import hash_password
 from app.services import storage_service
 
@@ -33,6 +33,14 @@ def _calculate_expiry(expires_in: str | None) -> datetime | None:
     return datetime.now(timezone.utc) + EXPIRY_MAP[expires_in]
 
 
+def _is_expired(expires_at: datetime | None) -> bool:
+    if not expires_at:
+        return False
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at < datetime.now(timezone.utc)
+
+
 # ─── Create file share ──────────────────────────────────
 
 
@@ -47,7 +55,6 @@ async def create_file_share(
     expires_at = _calculate_expiry(expires_in)
     is_private = bool(password)
     pw_hash = await hash_password(password) if password else None
-    total_size = sum(f["size"] for f in files)
 
     # Upload all files to storage
     file_records = []
@@ -57,21 +64,21 @@ async def create_file_share(
         file_records.append(
             File(
                 id=str(uuid4()),
+                urlid=uid,
                 filename=f["filename"],
-                storage_key=storage_key,
-                mime_type=f["mime_type"],
-                size=f["size"],
+                filetype=f["mime_type"],
+                filesize=f["size"],
+                fileurl=storage_key,
             )
         )
 
     share = Share(
         id=str(uuid4()),
-        uid=uid,
-        type=ShareType.FILE,
+        urlid=uid,
+        title=None,
+        password=pw_hash,
         is_private=is_private,
-        password_hash=pw_hash,
         expires_at=expires_at,
-        total_size=total_size,
         files=file_records,
     )
 
@@ -90,29 +97,31 @@ async def create_text_share(
     language: str | None = None,
     expires_in: str | None = None,
     password: str | None = None,
+    target_uid: str | None = None,
 ) -> str:
     """Create a text share: store in DB, return UID."""
-    uid = await generate_uid(db)
+    if target_uid and is_valid_uid(target_uid):
+        uid = target_uid
+    else:
+        uid = await generate_uid(db)
     expires_at = _calculate_expiry(expires_in)
     is_private = bool(password)
     pw_hash = await hash_password(password) if password else None
-    content_size = len(content.encode("utf-8"))
 
     text_share = TextShare(
         id=str(uuid4()),
-        title=title,
+        urlid=uid,
         content=content,
         language=language or "plaintext",
     )
 
     share = Share(
         id=str(uuid4()),
-        uid=uid,
-        type=ShareType.TEXT,
+        urlid=uid,
+        title=title,
+        password=pw_hash,
         is_private=is_private,
-        password_hash=pw_hash,
         expires_at=expires_at,
-        total_size=content_size,
         text_share=text_share,
     )
 
@@ -128,7 +137,7 @@ async def get_share_by_uid(db: AsyncSession, uid: str) -> dict | None:
     """Get share metadata by UID. Does NOT include text content."""
     result = await db.execute(
         select(Share)
-        .where(Share.uid == uid)
+        .where(Share.urlid == uid)
         .options(selectinload(Share.files), selectinload(Share.text_share))
     )
     share = result.scalar_one_or_none()
@@ -136,28 +145,34 @@ async def get_share_by_uid(db: AsyncSession, uid: str) -> dict | None:
         return None
 
     # Check expiry
-    if share.expires_at and share.expires_at < datetime.now(timezone.utc):
+    if _is_expired(share.expires_at):
         return None
 
+    total_size = (
+        sum(f.filesize for f in share.files)
+        if share.files
+        else len(share.text_share.content.encode("utf-8"))
+    )
+    share_type = "TEXT" if share.text_share else "FILE"
     return {
-        "uid": share.uid,
-        "type": share.type.value,
+        "uid": share.urlid,
+        "type": share_type,
         "isPrivate": share.is_private,
         "expiresAt": share.expires_at.isoformat() if share.expires_at else None,
         "createdAt": share.created_at.isoformat(),
-        "totalSize": str(share.total_size),
+        "totalSize": str(total_size),
         "fileCount": len(share.files),
         "files": [
             {
                 "id": f.id,
                 "filename": f.filename,
-                "mimeType": f.mime_type,
-                "size": str(f.size),
+                "mimeType": f.filetype,
+                "size": str(f.filesize),
             }
             for f in share.files
         ],
         "textShare": (
-            {"title": share.text_share.title, "language": share.text_share.language}
+            {"title": share.title, "language": share.text_share.language}
             if share.text_share
             else None
         ),
@@ -176,31 +191,32 @@ async def update_text_share(
 ) -> bool:
     """Update text content and title for an existing share in DB."""
     result = await db.execute(
-        select(Share).where(Share.uid == uid).options(selectinload(Share.text_share))
+        select(Share).where(Share.urlid == uid).options(selectinload(Share.text_share))
     )
     share = result.scalar_one_or_none()
     if not share:
         return False
 
-    if share.expires_at and share.expires_at < datetime.now(timezone.utc):
+    if _is_expired(share.expires_at):
         return False
 
     if share.text_share:
         share.text_share.content = content
         if title is not None:
-            share.text_share.title = title
+            share.title = title
         if language is not None:
             share.text_share.language = language
     else:
         text_share = TextShare(
             id=str(uuid4()),
-            title=title,
+            urlid=uid,
             content=content,
             language=language or "plaintext",
         )
         share.text_share = text_share
+        if title is not None:
+            share.title = title
 
-    share.total_size = len(content.encode("utf-8"))
     await db.commit()
     return True
 
@@ -211,15 +227,15 @@ async def update_text_share(
 async def get_text_content(db: AsyncSession, uid: str) -> dict | None:
     """Get text content for a share."""
     result = await db.execute(
-        select(Share).where(Share.uid == uid).options(selectinload(Share.text_share))
+        select(Share).where(Share.urlid == uid).options(selectinload(Share.text_share))
     )
     share = result.scalar_one_or_none()
     if not share or not share.text_share:
         return None
-    if share.expires_at and share.expires_at < datetime.now(timezone.utc):
+    if _is_expired(share.expires_at):
         return None
     return {
-        "title": share.text_share.title,
+        "title": share.title,
         "content": share.text_share.content,
         "language": share.text_share.language,
     }
@@ -230,7 +246,7 @@ async def get_text_content(db: AsyncSession, uid: str) -> dict | None:
 
 async def get_share_password_hash(db: AsyncSession, uid: str) -> str | None:
     """Get the password hash for a share."""
-    result = await db.execute(select(Share.password_hash).where(Share.uid == uid))
+    result = await db.execute(select(Share.password).where(Share.urlid == uid))
     row = result.scalar_one_or_none()
     return row
 
@@ -246,13 +262,13 @@ async def get_file_for_download(db: AsyncSession, file_id: str) -> dict | None:
     file = result.scalar_one_or_none()
     if not file:
         return None
-    if file.share.expires_at and file.share.expires_at < datetime.now(timezone.utc):
+    if _is_expired(file.share.expires_at):
         return None
     return {
-        "storage_key": file.storage_key,
+        "storage_key": file.fileurl,
         "filename": file.filename,
-        "mime_type": file.mime_type,
-        "share_uid": file.share.uid,
+        "mime_type": file.filetype,
+        "share_uid": file.share.urlid,
         "is_private": file.share.is_private,
     }
 
@@ -263,11 +279,11 @@ async def get_file_for_download(db: AsyncSession, file_id: str) -> dict | None:
 async def get_share_files(db: AsyncSession, uid: str) -> list[dict] | None:
     """Get all files for a share (used for ZIP download)."""
     result = await db.execute(
-        select(Share).where(Share.uid == uid).options(selectinload(Share.files))
+        select(Share).where(Share.urlid == uid).options(selectinload(Share.files))
     )
     share = result.scalar_one_or_none()
     if not share:
         return None
-    if share.expires_at and share.expires_at < datetime.now(timezone.utc):
+    if _is_expired(share.expires_at):
         return None
-    return [{"storage_key": f.storage_key, "filename": f.filename} for f in share.files]
+    return [{"storage_key": f.fileurl, "filename": f.filename} for f in share.files]
