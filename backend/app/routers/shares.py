@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
 
 from app.database import get_db
-from app.schemas import TextShareCreate, PasswordVerify
+from app.schemas import TextShareCreate, TextShareUpdate, PasswordVerify
 from app.services import share_service, password_service
 from app.services.uid_service import normalize_uid, is_valid_uid, format_uid
 from app.middleware.rate_limiter import limiter, RETRIEVAL_LIMIT, PASSWORD_LIMIT, UPLOAD_LIMIT
@@ -115,6 +115,61 @@ async def create_text_share(
             "data": {"uid": uid, "formattedUID": format_uid(uid)},
         },
     )
+
+
+# ─── PUT /api/shares/text/{uid} — Update text share ───
+
+
+@router.put("/text/{uid}")
+@limiter.limit(UPLOAD_LIMIT)
+async def update_text_share(
+    request: Request,
+    uid: str,
+    body: TextShareUpdate,
+    db: AsyncSession = Depends(get_db),
+    x_session_token: str | None = Header(default=None, alias="X-Session-Token"),
+):
+    clean_uid = normalize_uid(uid)
+    if not is_valid_uid(clean_uid):
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Invalid UID format"},
+        )
+
+    share = await share_service.get_share_by_uid(db, clean_uid)
+    if not share:
+        # Create share if it does not exist
+        created_uid = await share_service.create_text_share(
+            db,
+            content=body.content,
+            title=body.title,
+            language=body.language,
+            expires_in="24h",
+        )
+        return JSONResponse(
+            status_code=200,
+            content={"success": True, "data": {"uid": created_uid, "updated": True}},
+        )
+
+    if share["isPrivate"]:
+        if not x_session_token or not password_service.validate_session_token(
+            x_session_token, clean_uid
+        ):
+            return JSONResponse(
+                status_code=401,
+                content={"success": False, "error": "Authentication required"},
+            )
+
+    updated = await share_service.update_text_share(
+        db, clean_uid, content=body.content, title=body.title, language=body.language
+    )
+    if not updated:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Failed to update text content"},
+        )
+
+    return {"success": True, "data": {"uid": clean_uid, "updated": True}}
 
 
 # ─── GET /api/shares/{uid} — Get share metadata ────────

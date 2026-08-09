@@ -33,6 +33,16 @@ export async function createTextShare(data) {
   });
 }
 
+export async function updateTextShare(uid, data, sessionToken) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (sessionToken) headers['X-Session-Token'] = sessionToken;
+  return request(`/api/shares/text/${uid}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data),
+  });
+}
+
 // ─── Retrieval ──────────────────────────────────────────
 
 export async function getShareByUID(uid) {

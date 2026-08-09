@@ -164,6 +164,47 @@ async def get_share_by_uid(db: AsyncSession, uid: str) -> dict | None:
     }
 
 
+# ─── Update text share ───────────────────────────────────
+
+
+async def update_text_share(
+    db: AsyncSession,
+    uid: str,
+    content: str,
+    title: str | None = None,
+    language: str | None = None,
+) -> bool:
+    """Update text content and title for an existing share in DB."""
+    result = await db.execute(
+        select(Share).where(Share.uid == uid).options(selectinload(Share.text_share))
+    )
+    share = result.scalar_one_or_none()
+    if not share:
+        return False
+
+    if share.expires_at and share.expires_at < datetime.now(timezone.utc):
+        return False
+
+    if share.text_share:
+        share.text_share.content = content
+        if title is not None:
+            share.text_share.title = title
+        if language is not None:
+            share.text_share.language = language
+    else:
+        text_share = TextShare(
+            id=str(uuid4()),
+            title=title,
+            content=content,
+            language=language or "plaintext",
+        )
+        share.text_share = text_share
+
+    share.total_size = len(content.encode("utf-8"))
+    await db.commit()
+    return True
+
+
 # ─── Get text content ───────────────────────────────────
 
 

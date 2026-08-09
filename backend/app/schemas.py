@@ -16,6 +16,12 @@ class TextShareCreate(BaseModel):
     password: str | None = Field(default=None, min_length=4, max_length=128)
 
 
+class TextShareUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    content: str = Field(min_length=0, max_length=500000)
+    language: str | None = Field(default=None, max_length=50)
+
+
 class PasswordVerify(BaseModel):
     password: str = Field(min_length=1)
 
