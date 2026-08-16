@@ -203,3 +203,113 @@
     font-size: 8rem;
   }
 }
+
+.page-split {
+  display: flex;
+  gap: 1.5rem;
+  min-height: calc(100vh - 4rem);
+  padding: 1.5rem;
+}
+
+.page-split__main {
+  flex: 1;
+  position: relative;
+}
+
+.page-split__sidebar {
+  width: min(340px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.page-split__sidebar-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  backdrop-filter: blur(16px);
+}
+
+.page-split__search,
+.room-list-item input {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.85rem;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  padding: 0.9rem 1rem;
+}
+
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.room-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.85rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.95rem;
+  padding: 0.95rem 0.95rem;
+}
+
+.room-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.room-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.room-join-button,
+.room-verify-button {
+  border: none;
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #fb923c, #f59e0b);
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.room-join-button:hover,
+.room-verify-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.room-verify-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.room-password-note {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.home-toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 50;
+  max-width: 320px;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+  font-size: 0.95rem;
+}

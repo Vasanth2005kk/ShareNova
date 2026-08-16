@@ -1,13 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Zap, Search, Loader2 } from 'lucide-react';
 import EditorConfigModal from '@/components/editor/EditorConfigModal';
-import { getShareByUID } from '@/lib/api';
+import { getShareByUID, verifyPassword } from '@/lib/api';
 import { normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Home.css';
 
 // ─── Animated glowing text component ────────────────────
+
+const demoRooms = [
+  { uid: 'A1B2C3', title: 'Team Notes', description: 'Private text sheet', isPrivate: true },
+  { uid: 'F4G5H6', title: 'Open Draft', description: 'Quick access editor', isPrivate: false },
+  { uid: 'J7K8L9', title: 'Meeting Log', description: 'Secure group room', isPrivate: true },
+];
 
 function GlowText() {
   const letters = 'ShareNova'.split('');
@@ -81,6 +87,60 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [joinPassword, setJoinPassword] = useState('');
+  const [showPasswordBox, setShowPasswordBox] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => window.clearTimeout(toastTimeoutRef.current);
+  }, []);
+
+  function showToast(message) {
+    setToastMessage(message);
+    window.clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = window.setTimeout(() => setToastMessage(''), 3200);
+  }
+
+  async function handleJoinRoom(room) {
+    const roomUid = normalizeUID(room.uid);
+    if (!roomUid || !isValidUID(roomUid)) {
+      showToast('Invalid room code.');
+      return;
+    }
+
+    if (!room.isPrivate) {
+      navigate(`/text/${roomUid}`);
+      return;
+    }
+
+    setSelectedRoom(room);
+    setShowPasswordBox(true);
+    setJoinPassword('');
+    setSearchError('');
+  }
+
+  async function handleVerifyJoinPassword(e) {
+    e?.preventDefault();
+    if (!selectedRoom) return;
+
+    const roomUid = normalizeUID(selectedRoom.uid);
+    setIsVerifyingPassword(true);
+    try {
+      const res = await verifyPassword(roomUid, joinPassword);
+      if (res.success && res.data) {
+        navigate(`/text/${roomUid}`);
+        return;
+      }
+      showToast('Incorrect password. Please try again.');
+    } catch (err) {
+      showToast('Unable to verify password.');
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  }
 
   async function handleRoomSearch(e) {
     e?.preventDefault();
@@ -210,6 +270,56 @@ export default function HomePage() {
             )}
           </form>
         </div>
+
+        <div className="page-split__sidebar-card">
+          <span className="page-split__sidebar-label">Active Rooms</span>
+          <div className="room-list">
+            {demoRooms.map((room) => (
+              <div key={room.uid} className="room-list-item">
+                <div>
+                  <p className="room-title">{room.title}</p>
+                  <p className="room-subtitle">{room.description}</p>
+                </div>
+                <button
+                  type="button"
+                  className="room-join-button"
+                  onClick={() => handleJoinRoom(room)}
+                >
+                  Join
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {showPasswordBox && selectedRoom && (
+          <div className="page-split__sidebar-card">
+            <span className="page-split__sidebar-label">Password required</span>
+            <form onSubmit={handleVerifyJoinPassword} className="flex flex-col gap-3">
+              <p className="room-password-note">Enter the password for {selectedRoom.title}</p>
+              <input
+                type="password"
+                value={joinPassword}
+                onChange={(e) => setJoinPassword(e.target.value)}
+                placeholder="Room password"
+                className="page-split__search"
+              />
+              <button
+                type="submit"
+                disabled={!joinPassword.trim() || isVerifyingPassword}
+                className="room-verify-button"
+              >
+                {isVerifyingPassword ? 'Verifying...' : 'Unlock Room'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {toastMessage && (
+          <div className="home-toast">
+            {toastMessage}
+          </div>
+        )}
       </aside>
     </div>
   );
