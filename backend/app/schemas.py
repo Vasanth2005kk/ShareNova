@@ -20,8 +20,6 @@ class TextShareCreate(BaseModel):
     def validate_password(cls, v):
         if v == "" or v is None:
             return None
-        if isinstance(v, str) and len(v) < 4:
-            raise ValueError("Password must be at least 4 characters")
         return v
 
     @field_validator("expiresIn", "title", mode="before")

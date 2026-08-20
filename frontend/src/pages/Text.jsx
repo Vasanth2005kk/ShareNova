@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
 import { 
-  FileText, Loader2, Sparkles, Save, Info, Database, 
+  FileText, Loader2, Sparkles, Save, Info, Upload, 
   CheckCircle2, Copy, Check, RefreshCw, Radio, Plus, UploadCloud, Search
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -217,15 +217,27 @@ export default function TextPage() {
     setError('');
 
     const targetUid = shareUid || sessionUid || generateUID();
+    const token = getShareSessionToken(targetUid) || apiSessionToken;
 
     try {
+      if (shareUid) {
+        const metadataRes = await getShareByUID(targetUid);
+        if (metadataRes.success && metadataRes.data?.isPrivate && !token) {
+          setShowPasswordModal(true);
+          setError('This share is password protected. Verify the password before updating it.');
+          setState('idle');
+          setDbStatus('idle');
+          return;
+        }
+      }
+
       let res;
       if (shareUid) {
         // Update existing room sheet in DB
         res = await updateTextShare(targetUid, {
           content,
           title: title || 'Untitled Room Document',
-        });
+        }, token || undefined);
       } else {
         // Create text share room in DB
         res = await createTextShare({
@@ -454,9 +466,9 @@ export default function TextPage() {
                       {state === 'submitting' ? (
                         <Loader2 size={14} className="animate-spin" />
                       ) : (
-                        <Database size={14} />
+                        <Upload size={14} />
                       )}
-                      <span>{dbStatus === 'connected' ? 'Update DB Sheet' : 'Save & Connect DB'}</span>
+                      <span>Update</span>
                     </button>
 
                     <button 
@@ -554,13 +566,13 @@ export default function TextPage() {
                 <span className="font-mono font-bold text-sm text-orange-400">{formatUID(activeRoomUid)}</span>
               </div>
 
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <span className="text-xs text-(--text-muted)">Database Status</span>
                 <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   {dbStatus === 'connected' ? 'DB Synced' : 'Ready to Sync'}
                 </span>
-              </div>
+              </div> */}
             </div>
 
             <button
@@ -583,13 +595,13 @@ export default function TextPage() {
         </div>
 
         {/* Quick Actions Card */}
-        <div className="page-split__sidebar-card">
+        {/* <div className="page-split__sidebar-card">
           <span className="page-split__sidebar-label">Quick Actions</span>
           <button onClick={reset} className="page-split__btn-secondary flex items-center justify-center gap-2">
             <Plus size={14} />
             Create New Sheet Room
           </button>
-        </div>
+        </div> */}
       </aside>
     </div>
   );

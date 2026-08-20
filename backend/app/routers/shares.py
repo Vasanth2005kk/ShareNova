@@ -147,6 +147,8 @@ async def update_text_share(
             content={"success": False, "error": "Invalid UID format"},
         )
 
+    token = x_session_token or request.query_params.get("token")
+
     share = await share_service.get_share_by_uid(db, clean_uid)
     if not share:
         # Create share if it does not exist
@@ -164,9 +166,7 @@ async def update_text_share(
         )
 
     if share["isPrivate"]:
-        if not x_session_token or not password_service.validate_session_token(
-            x_session_token, clean_uid
-        ):
+        if not token or not password_service.validate_session_token(token, clean_uid):
             return JSONResponse(
                 status_code=401,
                 content={"success": False, "error": "Authentication required"},
@@ -279,6 +279,7 @@ async def get_text_content(
             content={"success": False, "error": "Invalid UID format"},
         )
 
+    token = x_session_token or request.query_params.get("token")
     share = await share_service.get_share_by_uid(db, clean_uid)
     if not share:
         return JSONResponse(
@@ -288,9 +289,7 @@ async def get_text_content(
 
     # If private, validate session token
     if share["isPrivate"]:
-        if not x_session_token or not password_service.validate_session_token(
-            x_session_token, clean_uid
-        ):
+        if not token or not password_service.validate_session_token(token, clean_uid):
             return JSONResponse(
                 status_code=401,
                 content={
