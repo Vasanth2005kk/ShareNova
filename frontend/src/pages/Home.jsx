@@ -3,17 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Zap, Search, Loader2 } from 'lucide-react';
 import EditorConfigModal from '@/components/editor/EditorConfigModal';
-import { getShareByUID, verifyPassword } from '@/lib/api';
+import PasswordModal from '@/components/shared/PasswordModal';
+import { getShareByUID, getActiveShares, verifyPassword } from '@/lib/api';
 import { normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Home.css';
 
 // ─── Animated glowing text component ────────────────────
 
-const demoRooms = [
-  { uid: 'A1B2C3', title: 'Team Notes', description: 'Private text sheet', isPrivate: true },
-  { uid: 'F4G5H6', title: 'Open Draft', description: 'Quick access editor', isPrivate: false },
-  { uid: 'J7K8L9', title: 'Meeting Log', description: 'Secure group room', isPrivate: true },
-];
+const demoRooms = [];
 
 function GlowText() {
   const letters = 'ShareNova'.split('');
@@ -87,6 +84,8 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [rooms, setRooms] = useState(demoRooms);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [joinPassword, setJoinPassword] = useState('');
   const [showPasswordBox, setShowPasswordBox] = useState(false);
@@ -123,6 +122,7 @@ export default function HomePage() {
   }
 
   async function handleVerifyJoinPassword(e) {
+    // Deprecated: handled via centered modal — kept for compatibility
     e?.preventDefault();
     if (!selectedRoom) return;
 
@@ -130,8 +130,9 @@ export default function HomePage() {
     setIsVerifyingPassword(true);
     try {
       const res = await verifyPassword(roomUid, joinPassword);
-      if (res.success && res.data) {
-        navigate(`/text/${roomUid}`);
+      if (res.success && res.data?.sessionToken) {
+        setShowPasswordBox(false);
+        navigate(`/text/${roomUid}`, { state: { sessionToken: res.data.sessionToken } });
         return;
       }
       showToast('Incorrect password. Please try again.');
@@ -169,6 +170,36 @@ export default function HomePage() {
       setIsSearching(false);
     }
   }
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchRooms() {
+      setIsLoadingRooms(true);
+      try {
+        const res = await getActiveShares(12);
+        if (res.success && Array.isArray(res.data) && mounted) {
+          // Map backend shape to UI-friendly room objects
+          const mapped = res.data.map((s) => ({
+            uid: s.uid,
+            title: s.title || (s.type === 'TEXT' ? 'Text Room' : 'File Room'),
+            description: s.type === 'TEXT' ? 'Text share' : 'File share',
+            isPrivate: !!s.isPrivate,
+          }));
+          setRooms(mapped.length ? mapped : demoRooms);
+        }
+      } catch (err) {
+        // keep demoRooms on failure
+        console.error('Error fetching active shares:', err);  
+      } finally {
+        if (mounted) setIsLoadingRooms(false);
+      }
+    }
+
+    fetchRooms();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="page-split">
@@ -227,6 +258,8 @@ export default function HomePage() {
           onChange={setModalData}
         />
 
+        
+
         {/* Footer divider & text */}
         <div className="footer-divider" />
         <footer className="home-footer">
@@ -254,14 +287,6 @@ export default function HomePage() {
                 placeholder="Enter 6-digit room code..."
                 className="page-split__search pr-9"
               />
-              <button
-                type="submit"
-                disabled={isSearching || !searchQuery.trim()}
-                className="absolute right-2 p-1 text-(--text-muted) hover:text-orange-400 disabled:opacity-40 transition-colors"
-                title="Search Room"
-              >
-                {isSearching ? <Loader2 size={16} className="animate-spin text-orange-400" /> : <Search size={16} />}
-              </button>
             </div>
             {searchError && (
               <span className="text-[11px] text-red-400 font-medium px-1">
@@ -271,49 +296,58 @@ export default function HomePage() {
           </form>
         </div>
 
-        <div className="page-split__sidebar-card">
+        <div className="page-split__sidebar-card-room-list">
           <span className="page-split__sidebar-label">Active Rooms</span>
           <div className="room-list">
-            {demoRooms.map((room) => (
-              <div key={room.uid} className="room-list-item">
+            {isLoadingRooms ? (
+              <div className="room-list-item">
                 <div>
-                  <p className="room-title">{room.title}</p>
-                  <p className="room-subtitle">{room.description}</p>
+                  <p className="room-title">Loading rooms…</p>
                 </div>
-                <button
-                  type="button"
-                  className="room-join-button"
-                  onClick={() => handleJoinRoom(room)}
-                >
-                  Join
-                </button>
               </div>
-            ))}
+            ) : (
+              rooms.map((room) => (
+                <div key={room.uid} className="room-list-item">
+                  <div>
+                    <p className="room-title">{room.title}</p>
+                    <p className="room-subtitle">{room.description}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="room-join-button"
+                    onClick={() => handleJoinRoom(room)}
+                  >
+                    Join
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {showPasswordBox && selectedRoom && (
-          <div className="page-split__sidebar-card">
-            <span className="page-split__sidebar-label">Password required</span>
-            <form onSubmit={handleVerifyJoinPassword} className="flex flex-col gap-3">
-              <p className="room-password-note">Enter the password for {selectedRoom.title}</p>
-              <input
-                type="password"
-                value={joinPassword}
-                onChange={(e) => setJoinPassword(e.target.value)}
-                placeholder="Room password"
-                className="page-split__search"
-              />
-              <button
-                type="submit"
-                disabled={!joinPassword.trim() || isVerifyingPassword}
-                className="room-verify-button"
-              >
-                {isVerifyingPassword ? 'Verifying...' : 'Unlock Room'}
-              </button>
-            </form>
-          </div>
-        )}
+        <PasswordModal
+          isOpen={showPasswordBox && !!selectedRoom}
+          onClose={() => setShowPasswordBox(false)}
+          roomTitle={selectedRoom?.title}
+          onConfirm={async (pw) => {
+            if (!selectedRoom) return;
+            const roomUid = normalizeUID(selectedRoom.uid);
+            setIsVerifyingPassword(true);
+            try {
+              const res = await verifyPassword(roomUid, pw);
+              if (res.success && res.data?.sessionToken) {
+                setShowPasswordBox(false);
+                navigate(`/text/${roomUid}`, { state: { sessionToken: res.data.sessionToken } });
+                return;
+              }
+              showToast('Incorrect password. Please try again.');
+            } catch (err) {
+              showToast('Unable to verify password.');
+            } finally {
+              setIsVerifyingPassword(false);
+            }
+          }}
+        />
 
         {toastMessage && (
           <div className="home-toast">

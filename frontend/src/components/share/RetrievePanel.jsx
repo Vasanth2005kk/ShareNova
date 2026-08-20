@@ -5,6 +5,11 @@ import PasswordGate from '@/components/forms/PasswordGate';
 import TextShareView from '@/components/share/TextShareView';
 import FileShareView from '@/components/share/FileShareView';
 import { getShareByUID, verifyPassword, getTextContent } from '@/lib/api';
+import { 
+  doesShareRequirePassword, 
+  markShareAsVerified, 
+  getShareSessionToken 
+} from '@/lib/sessionPasswordManager';
 
 export default function RetrievePanel({ title = 'Retrieve a Share', description = 'Enter the 6-digit code to access shared content.' }) {
   const [share, setShare] = useState(null);
@@ -32,14 +37,18 @@ export default function RetrievePanel({ title = 'Retrieve a Share', description 
       const shareData = res.data;
       setShare(shareData);
 
-      if (shareData.isPrivate) {
+      // Check if password is required and if already verified in this session
+      if (doesShareRequirePassword(shareData, uid)) {
         setNeedsPassword(true);
         setIsLoading(false);
         return;
       }
 
+      // Check if already verified and get the session token
+      const existingToken = getShareSessionToken(uid);
+
       if (shareData.type === 'TEXT') {
-        const contentRes = await getTextContent(shareData.uid);
+        const contentRes = await getTextContent(shareData.uid, existingToken || undefined);
         if (contentRes.success && contentRes.data) {
           setTextContent(contentRes.data);
         }
@@ -56,6 +65,10 @@ export default function RetrievePanel({ title = 'Retrieve a Share', description 
     const res = await verifyPassword(share.uid, password);
     if (res.success && res.data) {
       const token = res.data.sessionToken;
+      
+      // Mark this share as verified in the current session
+      markShareAsVerified(share.uid, token);
+      
       setSessionToken(token);
       setNeedsPassword(false);
 

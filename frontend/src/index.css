@@ -393,7 +393,12 @@ button {
   }
 }
 
+.page-split__sidebar{
+  padding-top: 2rem;
+}
+
 .main-content {
   flex: 1;
-  padding-top: 4rem;
+  overflow:hidden;
+  /* padding-top: 4rem; */
 }

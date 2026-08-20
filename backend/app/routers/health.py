@@ -1,8 +1,3 @@
-"""
-health.py — Health check endpoint.
-Replaces: backend/src/routes/health.ts
-"""
-
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy import text

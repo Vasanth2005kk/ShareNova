@@ -223,12 +223,10 @@
   gap: 1rem;
 }
 
-.page-split__sidebar-card {
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
+.page-split__sidebar-card-room-list
+{
   padding: 1rem;
-  backdrop-filter: blur(16px);
+
 }
 
 .page-split__search,

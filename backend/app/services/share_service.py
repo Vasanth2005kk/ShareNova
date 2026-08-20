@@ -30,15 +30,17 @@ EXPIRY_MAP: dict[str, timedelta] = {
 def _calculate_expiry(expires_in: str | None) -> datetime | None:
     if not expires_in or expires_in not in EXPIRY_MAP:
         return None
-    return datetime.now(timezone.utc) + EXPIRY_MAP[expires_in]
+    # SQLite stores naive UTC datetimes; avoid timezone-aware inserts to prevent
+    # "datatype mismatch" errors during INSERT/SELECT.
+    return (datetime.now(timezone.utc).replace(tzinfo=None) + EXPIRY_MAP[expires_in])
 
 
 def _is_expired(expires_at: datetime | None) -> bool:
     if not expires_at:
         return False
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    return expires_at < datetime.now(timezone.utc)
+    if expires_at.tzinfo is not None:
+        expires_at = expires_at.astimezone(timezone.utc).replace(tzinfo=None)
+    return expires_at < datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 # ─── Create file share ──────────────────────────────────
@@ -287,3 +289,47 @@ async def get_share_files(db: AsyncSession, uid: str) -> list[dict] | None:
     if _is_expired(share.expires_at):
         return None
     return [{"storage_key": f.fileurl, "filename": f.filename} for f in share.files]
+
+
+async def list_active_shares(db: AsyncSession, limit: int = 12) -> list[dict]:
+    """Return a list of recently created, non-expired shares (metadata only).
+
+    This intentionally omits sensitive fields such as password hashes and
+    text content. The returned items are suitable for listing on a public
+    index or sidebar.
+    """
+    result = await db.execute(
+        select(Share)
+        .options(selectinload(Share.text_share), selectinload(Share.files))
+        .order_by(Share.created_at.desc())
+        .limit(max(limit, 1))
+    )
+    candidates = result.scalars().all()
+    for i in candidates:
+        print(f"share: {i.urlid}")
+        print(f"text_share object: {i.text_share}")
+
+        if i.text_share:
+            print("text_share data:")
+            print(vars(i.text_share))
+
+    out = []
+    for s in candidates:
+        if _is_expired(s.expires_at):
+            continue
+
+        share_type = "TEXT" if s.text_share else "FILE"
+        out.append(
+            {
+                "uid": s.urlid,
+                "type": share_type,
+                "isPrivate": s.is_private,
+                "expiresAt": s.expires_at.isoformat() if s.expires_at else None,
+                "createdAt": s.created_at.isoformat(),
+                "title": s.title,
+            }
+        )
+        if len(out) >= limit:
+            break
+
+    return out

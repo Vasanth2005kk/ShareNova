@@ -81,12 +81,15 @@ async def lifespan(app: FastAPI):
 
 # ─── App creation ────────────────────────────────────────
 
+# Enable interactive API docs in non-production environments
+docs_enabled = settings.NODE_ENV != "production"
 app = FastAPI(
     title="ShareNova API",
     version="2.0.0",
     lifespan=lifespan,
-    docs_url=None,
-    redoc_url=None,
+    docs_url=("/docs" if docs_enabled else None),
+    redoc_url=("/redoc" if docs_enabled else None),
+    openapi_url=("/openapi.json" if docs_enabled else None),
 )
 
 # ─── Rate limiter ────────────────────────────────────────

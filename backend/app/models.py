@@ -28,9 +28,9 @@ class Share(Base):
     title: Mapped[str | None] = mapped_column(String, nullable=True)
     password: Mapped[str | None] = mapped_column(String, nullable=True)
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime, server_default=func.now()
     )
 
     files: Mapped[list["File"]] = relationship(

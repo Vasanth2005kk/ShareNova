@@ -8,7 +8,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import UIDDisplay from '@/components/share/UIDDisplay';
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
-import { createTextShare, updateTextShare, getTextContent, getShareByUID } from '@/lib/api';
+import { createTextShare, updateTextShare, getTextContent, getShareByUID, verifyPassword } from '@/lib/api';
+import PasswordModal from '@/components/shared/PasswordModal';
+import { 
+  doesShareRequirePassword, 
+  markShareAsVerified, 
+  getShareSessionToken 
+} from '@/lib/sessionPasswordManager';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
 import { generateUID, normalizeUID, isValidUID, formatUID } from '@/lib/uid';
 import '@/styles/Text.css';
@@ -57,6 +63,9 @@ export default function TextPage() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [isFetchingRoom, setIsFetchingRoom] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [apiSessionToken, setApiSessionToken] = useState('');
 
   // Persistent session start — captured once on mount
   const sessionStart = useRef(null);
@@ -91,13 +100,27 @@ export default function TextPage() {
     try {
       const metadataRes = await getShareByUID(uidToFetch);
       if (metadataRes.success && metadataRes.data) {
-        const contentRes = await getTextContent(uidToFetch);
+        const meta = metadataRes.data;
+
+        // If private, check if already verified in this session
+        if (doesShareRequirePassword(meta, uidToFetch)) {
+          setShowPasswordModal(true);
+          setIsFetchingRoom(false);
+          return;
+        }
+
+        // If not private or already verified, get the session token (if any)
+        const token = getShareSessionToken(uidToFetch);
+
+        const contentRes = await getTextContent(uidToFetch, token || undefined);
         if (contentRes.success && contentRes.data) {
           setContent(contentRes.data.content || '');
           if (contentRes.data.title) setTitle(contentRes.data.title);
           setShareUid(uidToFetch);
           setDbStatus('connected');
           setLastSyncedAt(new Date().toLocaleTimeString());
+        } else {
+          setDbStatus('idle');
         }
       } else {
         setDbStatus('idle');
@@ -288,6 +311,46 @@ export default function TextPage() {
 
   return (
     <div className="page-split">
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        roomTitle={formatUID(sessionUid)}
+        allowClose={false}
+        onConfirm={async (pw) => {
+          if (!sessionUid) return;
+          setIsVerifyingPassword(true);
+          try {
+            const res = await verifyPassword(sessionUid, pw);
+            if (res.success && res.data?.sessionToken) {
+              const token = res.data.sessionToken;
+              
+              // Mark this share as verified in the current session
+              markShareAsVerified(sessionUid, token);
+              
+              setApiSessionToken(token);
+              setShowPasswordModal(false);
+              // fetch content with token
+              const contentRes = await getTextContent(sessionUid, token);
+              if (contentRes.success && contentRes.data) {
+                setContent(contentRes.data.content || '');
+                if (contentRes.data.title) setTitle(contentRes.data.title);
+                setShareUid(sessionUid);
+                setDbStatus('connected');
+                setLastSyncedAt(new Date().toLocaleTimeString());
+              }
+            } else {
+              // show error via simple state change
+              // re-open modal for retry
+              setShowPasswordModal(true);
+            }
+          } catch (err) {
+            console.warn('Password verify failed', err);
+            setShowPasswordModal(true);
+          } finally {
+            setIsVerifyingPassword(false);
+          }
+        }}
+      />
       {/* ── Left 80% Main Content Area ── */}
       <div className="page-split__main" style={{ padding: 0 }}>
         {!isEditing ? (
