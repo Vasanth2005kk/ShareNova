@@ -138,15 +138,6 @@ export default function DocumentInfoDropdown({
                   />
                 </div>
               </div>
-              {/* Share Options */}
-              <div className="config-section">
-                {/* <label className="section-label">Share Configuration</label> */}
-                <ShareOptionsForm 
-                  options={draftOptions} 
-                  onChange={setDraftOptions} 
-                  showExpiry={false}
-                />
-              </div>
 
               {/* Countdown / Expiry */}
               <div className="remaining-time-box">

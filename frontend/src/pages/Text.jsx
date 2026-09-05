@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
-import { 
-  FileText, Loader2, Sparkles, Save, Info, Upload, 
+import {
+  FileText, Loader2, Sparkles, Save, Info, Upload,
   CheckCircle2, Copy, Check, RefreshCw, Radio, Plus, UploadCloud, Search
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -10,9 +10,9 @@ import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
 import { createTextShare, updateTextShare, getTextContent, getShareByUID, verifyPassword } from '@/lib/api';
 import PasswordModal from '@/components/shared/PasswordModal';
-import { 
-  doesShareRequirePassword, 
-  markShareAsVerified, 
+import {
+  doesShareRequirePassword,
+  markShareAsVerified,
   getShareSessionToken,
   clearShareVerification
 } from '@/lib/sessionPasswordManager';
@@ -22,10 +22,10 @@ import '@/styles/Text.css';
 
 const EXPIRY_MS = {
   '30m': 30 * 60 * 1000,
-  '1h':  1 * 60 * 60 * 1000,
-  '6h':  6 * 60 * 60 * 1000,
+  '1h': 1 * 60 * 60 * 1000,
+  '6h': 6 * 60 * 60 * 1000,
   '24h': 24 * 60 * 60 * 1000,
-  '7d':  7 * 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
   '30d': 30 * 24 * 60 * 60 * 1000,
 };
 
@@ -49,7 +49,7 @@ export default function TextPage() {
     expiresIn: initialState.expiresIn || '24h',
     password: initialState.password || ''
   });
-  
+
   const [state, setState] = useState('idle');
   const [shareUid, setShareUid] = useState('');
   const [sessionUid, setSessionUid] = useState('');
@@ -63,17 +63,17 @@ export default function TextPage() {
   const [dbStatus, setDbStatus] = useState('idle'); // 'idle' | 'syncing' | 'connected' | 'error'
   const [copiedCode, setCopiedCode] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
-  
+
   const isJoiningRoom = Boolean(sessionId && !hasSessionSeed);
   const [isFetchingRoom, setIsFetchingRoom] = useState(isJoiningRoom);
-  
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
   const [apiSessionToken, setApiSessionToken] = useState('');
 
   // Persistent session start — captured once on mount
   const sessionStart = useRef(null);
-  
+
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
   const isNewSession = hasSessionSeed;
@@ -147,7 +147,7 @@ export default function TextPage() {
         fetchRoomFromDb(sessionUid);
       }
     }
-    
+
     // Cleanup: Require password again if user navigates away
     return () => {
       if (sessionUid) {
@@ -349,10 +349,10 @@ export default function TextPage() {
             const res = await verifyPassword(sessionUid, pw);
             if (res.success && res.data?.sessionToken) {
               const token = res.data.sessionToken;
-              
+
               // Mark this share as verified in the current session
               markShareAsVerified(sessionUid, token);
-              
+
               setApiSessionToken(token);
               setShowPasswordModal(false);
               // fetch content with token
@@ -381,7 +381,7 @@ export default function TextPage() {
       <div className="page-split__main" style={{ padding: 0 }}>
         {!isEditing ? (
           <div className="word-sheet__empty">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="empty-state-wrapper"
@@ -408,7 +408,7 @@ export default function TextPage() {
           </div>
         ) : isFetchingRoom ? (
           <div className="word-sheet__empty">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="empty-state-wrapper"
@@ -433,7 +433,7 @@ export default function TextPage() {
                 </div>
               </div>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="word-sheet"
@@ -443,7 +443,7 @@ export default function TextPage() {
                   <div className="word-sheet-title-group">
                     <div className="flex items-center gap-3">
                       <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
-                      
+
                       {/* Live DB Indicator */}
                       <div className={`db-status-badge ${dbStatus}`}>
                         {dbStatus === 'syncing' ? (
@@ -454,7 +454,7 @@ export default function TextPage() {
                         ) : dbStatus === 'connected' ? (
                           <>
                             <div className="status-dot connected" />
-                            <span>DB Synced</span>
+                            <span>Active</span>
                           </>
                         ) : (
                           <>
@@ -470,8 +470,8 @@ export default function TextPage() {
                         <span className="session-uid-label">Room Base ID:</span>
                         <div className="session-uid-chip">
                           <span className="session-uid-code">{formatUID(activeRoomUid)}</span>
-                          <button 
-                            onClick={handleCopyRoomCode} 
+                          <button
+                            onClick={handleCopyRoomCode}
                             className="session-uid-copy"
                             title="Copy Room Code"
                           >
@@ -488,16 +488,11 @@ export default function TextPage() {
                       disabled={state === 'submitting' || !content.trim()}
                       className="save-button"
                       title="Save sheet and update database room"
-                    >
-                      {state === 'submitting' ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <Upload size={14} />
-                      )}
+                    ><Upload size={14} />
                       <span>Update</span>
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => setShowDetails(!showDetails)}
                       className={`details-toggle-button ${showDetails ? 'active' : ''}`}
                       title="Document Information & Options"
@@ -505,14 +500,14 @@ export default function TextPage() {
                       <Info size={20} />
                     </button>
 
-                    <DocumentInfoDropdown 
-                      isOpen={showDetails} 
-                      onClose={() => setShowDetails(false)} 
-                      title={title} 
-                      setTitle={setTitle} 
-                      options={options} 
-                      setOptions={setOptions} 
-                      contentLength={content.length} 
+                    <DocumentInfoDropdown
+                      isOpen={showDetails}
+                      onClose={() => setShowDetails(false)}
+                      title={title}
+                      setTitle={setTitle}
+                      options={options}
+                      setOptions={setOptions}
+                      contentLength={content.length}
                       onDeleteSession={deleteSession}
                       expiresAt={expiresAt}
                       sessionExpiresAt={sessionExpiresAt}
@@ -545,25 +540,6 @@ export default function TextPage() {
                   <span className="char-counter">
                     {content.length.toLocaleString()} / {MAX_TEXT_SIZE.toLocaleString()} Max Characters
                   </span>
-                  
-                  <div className="flex items-center gap-3">
-                    {lastSyncedAt && (
-                      <span className="text-xs text-(--text-dim)">
-                        Last DB Sync: {lastSyncedAt}
-                      </span>
-                    )}
-                    
-                    {content.trim() && (
-                      <button 
-                        onClick={handleSubmit}
-                        disabled={state === 'submitting'}
-                        className="save-button"
-                      >
-                        {state === 'submitting' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                        Save & Get Code
-                      </button>
-                    )}
-                  </div>
                 </div>
               </motion.div>
             )}
