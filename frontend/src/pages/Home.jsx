@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Zap, Search, Loader2 } from 'lucide-react';
 import EditorConfigModal from '@/components/editor/EditorConfigModal';
-import PasswordModal from '@/components/shared/PasswordModal';
-import { getShareByUID, getActiveShares, verifyPassword } from '@/lib/api';
+import { getShareByUID, getActiveShares } from '@/lib/api';
+import { clearAllVerifications } from '@/lib/sessionPasswordManager';
 import { normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Home.css';
 
@@ -86,14 +86,11 @@ export default function HomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [rooms, setRooms] = useState(demoRooms);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [joinPassword, setJoinPassword] = useState('');
-  const [showPasswordBox, setShowPasswordBox] = useState(false);
-  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const toastTimeoutRef = useRef(null);
-
+  
   useEffect(() => {
+    clearAllVerifications();
     return () => window.clearTimeout(toastTimeoutRef.current);
   }, []);
 
@@ -110,37 +107,7 @@ export default function HomePage() {
       return;
     }
 
-    if (!room.isPrivate) {
-      navigate(`/text/${roomUid}`);
-      return;
-    }
-
-    setSelectedRoom(room);
-    setShowPasswordBox(true);
-    setJoinPassword('');
-    setSearchError('');
-  }
-
-  async function handleVerifyJoinPassword(e) {
-    // Deprecated: handled via centered modal — kept for compatibility
-    e?.preventDefault();
-    if (!selectedRoom) return;
-
-    const roomUid = normalizeUID(selectedRoom.uid);
-    setIsVerifyingPassword(true);
-    try {
-      const res = await verifyPassword(roomUid, joinPassword);
-      if (res.success && res.data?.sessionToken) {
-        setShowPasswordBox(false);
-        navigate(`/text/${roomUid}`, { state: { sessionToken: res.data.sessionToken } });
-        return;
-      }
-      showToast('Incorrect password. Please try again.');
-    } catch (err) {
-      showToast('Unable to verify password.');
-    } finally {
-      setIsVerifyingPassword(false);
-    }
+    navigate(`/text/${roomUid}`);
   }
 
   async function handleRoomSearch(e) {
@@ -324,30 +291,6 @@ export default function HomePage() {
             )}
           </div>
         </div>
-
-        <PasswordModal
-          isOpen={showPasswordBox && !!selectedRoom}
-          onClose={() => setShowPasswordBox(false)}
-          roomTitle={selectedRoom?.title}
-          onConfirm={async (pw) => {
-            if (!selectedRoom) return;
-            const roomUid = normalizeUID(selectedRoom.uid);
-            setIsVerifyingPassword(true);
-            try {
-              const res = await verifyPassword(roomUid, pw);
-              if (res.success && res.data?.sessionToken) {
-                setShowPasswordBox(false);
-                navigate(`/text/${roomUid}`, { state: { sessionToken: res.data.sessionToken } });
-                return;
-              }
-              showToast('Incorrect password. Please try again.');
-            } catch (err) {
-              showToast('Unable to verify password.');
-            } finally {
-              setIsVerifyingPassword(false);
-            }
-          }}
-        />
 
         {toastMessage && (
           <div className="home-toast">

@@ -14,5 +14,5 @@ limiter = Limiter(key_func=get_remote_address)
 # - password:   5/10min
 # - upload:     10/hour
 RETRIEVAL_LIMIT = "20/minute"
-PASSWORD_LIMIT = "5/10minutes"
+PASSWORD_LIMIT = "50/10minutes"
 UPLOAD_LIMIT = "10/hour"
