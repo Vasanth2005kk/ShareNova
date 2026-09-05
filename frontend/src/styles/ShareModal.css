@@ -1,0 +1,130 @@
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.share-modal-content {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.share-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.share-modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.share-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.share-modal-close:hover {
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.share-modal-body {
+  padding: 1.25rem;
+}
+
+.share-modal-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem 0;
+}
+
+.share-url-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.share-url-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+}
+
+.share-url-copy {
+  background: var(--surface-3);
+  border: none;
+  border-radius: 0.35rem;
+  color: var(--text-primary);
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.share-url-copy:hover {
+  background: var(--surface-4);
+}
+
+.share-social-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.share-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.share-social-btn:hover {
+  border-color: var(--hover-color);
+  background-color: color-mix(in srgb, var(--hover-color) 10%, transparent);
+  color: var(--text-primary);
+}

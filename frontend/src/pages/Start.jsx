@@ -4,7 +4,7 @@ import { Upload, FileText, Loader2, ArrowRight, Plus } from 'lucide-react';
 import DropZone from '@/components/upload/DropZone';
 import ProgressBar from '@/components/upload/ProgressBar';
 import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
-import UIDDisplay from '@/components/share/UIDDisplay';
+
 import RetrievePanel from '@/components/share/RetrievePanel';
 import { createFileShare, formatBytes } from '@/lib/api';
 import { MAX_TEXT_SIZE, MAX_FILES, MAX_UPLOAD_SIZE } from '@/lib/constants';
@@ -155,7 +155,7 @@ export default function StartPage() {
           <div className="mt-6 space-y-6">
             {status === 'done' && uid ? (
               <>
-                <UIDDisplay uid={uid} expiresAt={expiresAt} />
+
                 <button
                   onClick={resetShare}
                   className="w-full rounded-2xl border border-(--border-soft) bg-(--surface-2) py-3 text-sm font-medium text-(--text-muted) transition-all hover:bg-(--surface-4) hover:text-(--text-primary)"

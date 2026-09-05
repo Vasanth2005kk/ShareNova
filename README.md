@@ -135,7 +135,7 @@ ShareNova/
 │   │   ├── components/
 │   │   │   ├── common/          # Navbar, CountdownTimer
 │   │   │   ├── forms/           # PasswordGate, ShareOptionsForm
-│   │   │   ├── share/           # UIDDisplay, UIDInput, TextShareView, FileShareView
+│   │   │   ├── share/           # UIDInput, TextShareView, FileShareView
 │   │   │   └── upload/          # DropZone, ProgressBar
 │   │   ├── lib/                 # api.js, constants.js, uid.js
 │   │   ├── pages/               # Home, Upload, Text, Retrieve

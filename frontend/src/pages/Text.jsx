@@ -2,12 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
 import {
   FileText, Loader2, Sparkles, Save, Info, Upload,
-  CheckCircle2, Copy, Check, RefreshCw, Radio, Plus, UploadCloud, Search
+  CheckCircle2, Copy, Check, RefreshCw, Radio, Plus, UploadCloud, Search, Share2
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import UIDDisplay from '@/components/share/UIDDisplay';
+
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
+import ShareModal from '@/components/shared/ShareModal';
 import { createTextShare, updateTextShare, getTextContent, getShareByUID, verifyPassword } from '@/lib/api';
 import PasswordModal from '@/components/shared/PasswordModal';
 import {
@@ -61,8 +62,8 @@ export default function TextPage() {
 
   // DB Sync & Room status state
   const [dbStatus, setDbStatus] = useState('idle'); // 'idle' | 'syncing' | 'connected' | 'error'
-  const [copiedCode, setCopiedCode] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const isJoiningRoom = Boolean(sessionId && !hasSessionSeed);
   const [isFetchingRoom, setIsFetchingRoom] = useState(isJoiningRoom);
@@ -264,7 +265,7 @@ export default function TextPage() {
         setShareUid(activeUid);
         setSessionUid(activeUid);
         setExpiresAt(res.data.expires_at || res.data.expiresAt || null);
-        setState('done');
+        setState('idle');
         setDbStatus('connected');
         setLastSyncedAt(new Date().toLocaleTimeString());
         navigate(`/text/${activeUid}`, { replace: true });
@@ -278,14 +279,6 @@ export default function TextPage() {
       setState('idle');
       setDbStatus('error');
     }
-  }
-
-  function handleCopyRoomCode() {
-    const code = shareUid || sessionUid;
-    if (!code) return;
-    navigator.clipboard.writeText(code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
   }
 
   function reset() {
@@ -420,19 +413,6 @@ export default function TextPage() {
           </div>
         ) : (
           <div className="word-sheet-container">
-            {state === 'done' && shareUid ? (
-              <div className="editor-success-view">
-                <UIDDisplay uid={shareUid} expiresAt={expiresAt} />
-                <div className="flex gap-3 mt-4">
-                  <button onClick={() => setState('idle')} className="page-split__btn-secondary flex-1">
-                    Continue Editing Sheet
-                  </button>
-                  <button onClick={reset} className="page-split__btn-primary flex-1">
-                    Create New Sheet
-                  </button>
-                </div>
-              </div>
-            ) : (
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -465,24 +445,17 @@ export default function TextPage() {
                       </div>
                     </div>
 
-                    {activeRoomUid && (
-                      <div className="session-uid-row">
-                        <span className="session-uid-label">Room Base ID:</span>
-                        <div className="session-uid-chip">
-                          <span className="session-uid-code">{formatUID(activeRoomUid)}</span>
-                          <button
-                            onClick={handleCopyRoomCode}
-                            className="session-uid-copy"
-                            title="Copy Room Code"
-                          >
-                            {copiedCode ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className='Details-con flex items-center gap-2'>
+                    <button
+                      onClick={() => setShowShareModal(true)}
+                      className="share-button"
+                      title="Share Room URL"
+                    ><Share2 size={14} />
+                      <span>Share</span>
+                    </button>
+
                     <button
                       onClick={handleSubmit}
                       disabled={state === 'submitting' || !content.trim()}
@@ -542,50 +515,12 @@ export default function TextPage() {
                   </span>
                 </div>
               </motion.div>
-            )}
           </div>
         )}
       </div>
 
       {/* ── Right 20% Sidebar Panel ── */}
       <aside className="page-split__sidebar">
-        {/* Room Info Card */}
-        {activeRoomUid && (
-          <div className="page-split__sidebar-card">
-            <div className="flex items-center justify-between">
-              <span className="page-split__sidebar-label flex items-center gap-2">
-                <Radio size={14} className="text-orange-400" />
-                Current Room Base
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
-                Active
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-(--surface-2) border border-(--border-subtle) space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-(--text-muted)">Room Code</span>
-                <span className="font-mono font-bold text-sm text-orange-400">{formatUID(activeRoomUid)}</span>
-              </div>
-
-              {/* <div className="flex items-center justify-between">
-                <span className="text-xs text-(--text-muted)">Database Status</span>
-                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {dbStatus === 'connected' ? 'DB Synced' : 'Ready to Sync'}
-                </span>
-              </div> */}
-            </div>
-
-            <button
-              onClick={handleCopyRoomCode}
-              className="page-split__btn-secondary flex items-center justify-center gap-2"
-            >
-              {copiedCode ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              {copiedCode ? 'Room Code Copied!' : 'Copy Room Code'}
-            </button>
-          </div>
-        )}
 
         {/* Upload Files Card */}
         <div className="page-split__sidebar-card">
@@ -605,6 +540,13 @@ export default function TextPage() {
           </button>
         </div> */}
       </aside>
+      {/* Share Modal */}
+      <ShareModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+        shareUrl={window.location.href} 
+      />
+
     </div>
   );
 }
