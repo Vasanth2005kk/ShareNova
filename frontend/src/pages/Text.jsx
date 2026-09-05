@@ -13,7 +13,8 @@ import PasswordModal from '@/components/shared/PasswordModal';
 import { 
   doesShareRequirePassword, 
   markShareAsVerified, 
-  getShareSessionToken 
+  getShareSessionToken,
+  clearShareVerification
 } from '@/lib/sessionPasswordManager';
 import { MAX_TEXT_SIZE } from '@/lib/constants';
 import { generateUID, normalizeUID, isValidUID, formatUID } from '@/lib/uid';
@@ -62,7 +63,10 @@ export default function TextPage() {
   const [dbStatus, setDbStatus] = useState('idle'); // 'idle' | 'syncing' | 'connected' | 'error'
   const [copiedCode, setCopiedCode] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
-  const [isFetchingRoom, setIsFetchingRoom] = useState(false);
+  
+  const isJoiningRoom = Boolean(sessionId && !hasSessionSeed);
+  const [isFetchingRoom, setIsFetchingRoom] = useState(isJoiningRoom);
+  
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
   const [apiSessionToken, setApiSessionToken] = useState('');
@@ -91,7 +95,7 @@ export default function TextPage() {
     }
 
     setSessionUid('');
-  }, [sessionId, hasSessionSeed, navigate, initialState]);
+  }, [sessionId, hasSessionSeed, navigate, initialState.title, initialState.password, initialState.expiresIn, initialState.createdInDb, initialState.shareUid]);
 
   // Fetch Room data from DB if available when sessionUid changes
   const fetchRoomFromDb = useCallback(async (uidToFetch) => {
@@ -143,13 +147,20 @@ export default function TextPage() {
         fetchRoomFromDb(sessionUid);
       }
     }
-  }, [sessionUid, hasSessionSeed, initialState, fetchRoomFromDb]);
+    
+    // Cleanup: Require password again if user navigates away
+    return () => {
+      if (sessionUid) {
+        clearShareVerification(sessionUid);
+      }
+    };
+  }, [sessionUid, hasSessionSeed, initialState.createdInDb, initialState.shareUid, fetchRoomFromDb]);
 
   // ─── Persistence & Sync Logic ─────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
     sessionStart.current = null;
-    const saved = localStorage.getItem(storageKey);
+    const saved = sessionStorage.getItem(storageKey);
     let parsed = null;
     if (!isNewSession && saved) {
       try {
@@ -166,7 +177,7 @@ export default function TextPage() {
     }
 
     if (isNewSession) {
-      localStorage.removeItem(storageKey);
+      sessionStorage.removeItem(storageKey);
     }
 
     if (!sessionStart.current) {
@@ -206,7 +217,7 @@ export default function TextPage() {
       sessionExpiresAt,
       sessionPassword
     };
-    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    sessionStorage.setItem(storageKey, JSON.stringify(stateToSave));
   }, [title, content, options, shareUid, sessionUid, expiresAt, sessionExpiresAt, sessionPassword, sessionActive, storageKey]);
 
   // ─── Save & Sync to Backend DB ───────────────────────────
@@ -293,7 +304,7 @@ export default function TextPage() {
     setSessionPassword(options.password || '');
     setSessionActive(true);
     if (storageKey) {
-      localStorage.removeItem(storageKey);
+      sessionStorage.removeItem(storageKey);
     }
   }
 
@@ -313,7 +324,7 @@ export default function TextPage() {
     setSessionPassword('');
     setSessionActive(false);
     if (storageKey) {
-      localStorage.removeItem(storageKey);
+      sessionStorage.removeItem(storageKey);
     }
     navigate('/text', { replace: true });
   }
@@ -325,9 +336,12 @@ export default function TextPage() {
     <div className="page-split">
       <PasswordModal
         isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
+        onClose={() => {
+          setShowPasswordModal(false);
+          navigate('/');
+        }}
         roomTitle={formatUID(sessionUid)}
-        allowClose={false}
+        allowClose={true}
         onConfirm={async (pw) => {
           if (!sessionUid) return;
           setIsVerifyingPassword(true);
@@ -390,6 +404,18 @@ export default function TextPage() {
                   Go to Home
                 </Link>
               </div>
+            </motion.div>
+          </div>
+        ) : isFetchingRoom ? (
+          <div className="word-sheet__empty">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="empty-state-wrapper"
+            >
+              <Loader2 className="animate-spin text-amber-500 mb-4" size={48} />
+              <h2 className="empty-title">Loading Room...</h2>
+              <p className="empty-desc text-center">Verifying access and fetching room data.</p>
             </motion.div>
           </div>
         ) : (
