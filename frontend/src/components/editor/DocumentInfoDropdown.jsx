@@ -27,7 +27,7 @@ export default function DocumentInfoDropdown({
   const [showDeletePrompt, setShowDeletePrompt] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
-  const [sessionCopied, setSessionCopied] = useState(false);
+
 
   // Sync local state when dropdown opens
   useEffect(() => {
@@ -58,23 +58,7 @@ export default function DocumentInfoDropdown({
     onClose();
   };
 
-  async function copySessionUid() {
-    if (!sessionUid) return;
-    try {
-      await navigator.clipboard.writeText(sessionUid);
-      setSessionCopied(true);
-      setTimeout(() => setSessionCopied(false), 2000);
-    } catch {
-      const el = document.createElement('textarea');
-      el.value = sessionUid;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-      setSessionCopied(true);
-      setTimeout(() => setSessionCopied(false), 2000);
-    }
-  }
+
 
   const effectiveExpiry = sessionExpiresAt || expiresAt;
 
@@ -104,26 +88,7 @@ export default function DocumentInfoDropdown({
             </div>
 
             <div className="dropdown-body">
-              {sessionUid && (
-                <div className="session-uid-row">
-                  <span className="session-uid-label">Sheet ID</span> : 
-                  <div className="session-uid-chip">
-                    <span className="session-uid-code">{formatUID(sessionUid)}</span>
-                    <button
-                      type="button"
-                      onClick={copySessionUid}
-                      className="session-uid-copy"
-                      title="Copy session ID"
-                    >
-                      {sessionCopied ? (
-                        <Check size={14} color="#f97316" />
-                      ) : (
-                        <Copy size={14} color="var(--text-muted)" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
+
               {/* Document Title Edit */}
               <div>
                 <label className="section-label">Document Title</label>

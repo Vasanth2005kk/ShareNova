@@ -88,47 +88,6 @@
   font-weight: 700;
 }
 
-.session-uid-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.session-uid-label {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-}
-
-.session-uid-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.session-uid-code {
-  font-size: 1rem;
-  font-weight: 700;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: #f97316;
-  user-select: none;
-}
-
-.session-uid-copy {
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.session-uid-copy:hover {
-  background-color: var(--surface-3);
-}
 
 .details-toggle-button {
   padding: 0.5rem;
@@ -150,6 +109,27 @@
   color: white;
   box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.2);
 }
+
+.share-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.share-button:hover {
+  background-color: var(--surface-3);
+  color: #f97316;
+}
+
 
 .word-sheet-footer {
   margin-top: 2rem;
