@@ -13,7 +13,12 @@ import '@/styles/Home.css';
 const demoRooms = [];
 
 function GlowText() {
-  const letters = 'ShareNova'.split('');
+  const titleText = 'Share Notes And Files';
+  const titleLength = titleText.length;
+  const titleScale = titleLength > 18 ? 0.8 : titleLength > 14 ? 0.9 : 1;
+  const letters = titleText
+    .split('')
+    .map((letter) => (letter === ' ' ? '\u00A0' : letter));
 
   return (
     <h1 className="hero-title-container">
@@ -25,13 +30,13 @@ function GlowText() {
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
         aria-hidden="true"
       >
-        <span className="hero-title-glow-text">
-          ShareNova
+        <span className="hero-title-glow-text" style={{ whiteSpace: 'nowrap', transform: `scale(${titleScale})`, transformOrigin: 'center' }}>
+          {titleText}
         </span>
       </motion.span>
 
       {/* Main text with per-letter animation */}
-      <span className="hero-title-main" style={{ perspective: '800px' }}>
+      <span className="hero-title-main" style={{ perspective: '800px', whiteSpace: 'nowrap', transform: `scale(${titleScale})`, transformOrigin: 'center' }}>
         {letters.map((letter, i) => (
           <motion.span
             key={i}
@@ -230,7 +235,7 @@ export default function HomePage() {
         {/* Footer divider & text */}
         <div className="footer-divider" />
         <footer className="home-footer">
-          <p className="footer-text">ShareNova — Secure Temporary Sharing</p>
+          <p className="footer-text">Share Notes and Files — Secure Temporary Sharing</p>
         </footer>
       </div>
 

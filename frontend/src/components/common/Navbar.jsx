@@ -40,7 +40,7 @@ export default function Navbar() {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <span className="navbar-brand">
-            ShareNova
+            Share Notes and Files
           </span>
         </Link>
 
