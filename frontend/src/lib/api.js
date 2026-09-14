@@ -55,7 +55,7 @@ export async function getShareByUID(uid) {
   return request(`/api/shares/${uid}`);
 }
 
-export async function getActiveShares(limit = 12) {
+export async function getActiveShares(limit=12) {
   return request(`/api/shares/active?limit=${limit}`);
 }
 

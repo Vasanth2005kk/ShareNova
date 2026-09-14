@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/shares")
 
 
 @router.get("/active")
-@limiter.limit(RETRIEVAL_LIMIT)
+# @limiter.limit(RETRIEVAL_LIMIT)
 async def list_active_shares(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -209,19 +209,6 @@ async def get_share(
         )
 
     return {"success": True, "data": share}
-
-
-
-@router.get("/active")
-@limiter.limit(RETRIEVAL_LIMIT)
-async def list_active_shares(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    limit: int = 12,
-):
-    """List recently created, non-expired shares for the public sidebar."""
-    shares = await share_service.list_active_shares(db, limit=limit)
-    return {"success": True, "data": shares}
 
 
 # ─── POST /api/shares/{uid}/verify — Password verify ───
