@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FileText, Sparkles, Sun, Moon } from 'lucide-react';
 import '@/styles/Navbar.css';
+const Projectname = import.meta.env.VITE_projectName ;
+
 
 const navLinks = [
   { href: '/text', label: 'Editor', icon: FileText },
@@ -40,7 +42,7 @@ export default function Navbar() {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <span className="navbar-brand">
-            Share Notes and Files
+            {Projectname}
           </span>
         </Link>
 

@@ -7,13 +7,14 @@ import { getShareByUID, getActiveShares } from '@/lib/api';
 import { clearAllVerifications } from '@/lib/sessionPasswordManager';
 import { normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Home.css';
-
+const Projectname = import.meta.env.VITE_projectName ;
+console.log('Project Name:', Projectname);
 // ─── Animated glowing text component ────────────────────
 
 const demoRooms = [];
 
 function GlowText() {
-  const titleText = 'Share Notes And Files';
+  const titleText = Projectname;
   const titleLength = titleText.length;
   const titleScale = titleLength > 18 ? 0.8 : titleLength > 14 ? 0.9 : 1;
   const letters = titleText
@@ -235,7 +236,7 @@ export default function HomePage() {
         {/* Footer divider & text */}
         <div className="footer-divider" />
         <footer className="home-footer">
-          <p className="footer-text">Share Notes and Files — Secure Temporary Sharing</p>
+          <p className="footer-text"> {Projectname} — Secure Temporary Sharing</p>
         </footer>
       </div>
 
