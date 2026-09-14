@@ -42,6 +42,7 @@
 .hero-title-container {
   position: relative;
   display: inline-block;
+  white-space: nowrap;
 }
 
 .hero-title-glow {
@@ -62,6 +63,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  white-space: nowrap;
 }
 
 .hero-title-main {
@@ -69,6 +71,7 @@
   font-size: 3.75rem;
   font-weight: 800;
   letter-spacing: -0.025em;
+  white-space: nowrap;
 }
 
 .letter-animated {
