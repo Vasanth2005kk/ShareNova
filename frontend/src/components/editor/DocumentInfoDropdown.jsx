@@ -1,10 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, X, FileText, Trash2, Copy, Check } from 'lucide-react';
+import { Info, X, FileText, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import ShareOptionsForm from '@/components/forms/ShareOptionsForm';
 import CountdownTimer from '@/components/common/CountdownTimer';
 import '@/styles/DocumentInfoDropdown.css';
-import { formatUID } from '@/lib/uid';
 
 export default function DocumentInfoDropdown({ 
   isOpen, 
@@ -24,9 +22,7 @@ export default function DocumentInfoDropdown({
   // Local draft state to prevent instant updates to the main editor
   const [draftTitle, setDraftTitle] = useState(title);
   const [draftOptions, setDraftOptions] = useState(options);
-  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleteError, setDeleteError] = useState('');
+  
 
 
   // Sync local state when dropdown opens
@@ -35,11 +31,6 @@ export default function DocumentInfoDropdown({
       setDraftTitle(title);
       setDraftOptions(options);
     }
-    if (!isOpen) {
-      setShowDeletePrompt(false);
-      setDeletePassword('');
-      setDeleteError('');
-    }
   }, [isOpen, title, options]);
 
   const handleDone = () => {
@@ -47,18 +38,6 @@ export default function DocumentInfoDropdown({
     setOptions(draftOptions);
     onClose();
   };
-
-  const handleDelete = () => {
-    const expected = sessionPassword || '';
-    if (deletePassword !== expected) {
-      setDeleteError('Incorrect password');
-      return;
-    }
-    onDeleteSession();
-    onClose();
-  };
-
-
 
   const effectiveExpiry = sessionExpiresAt || expiresAt;
 
@@ -115,35 +94,14 @@ export default function DocumentInfoDropdown({
                   sessionStart={sessionStart}
                 />
               </div>
-
-              {showDeletePrompt && (
-                <div className="delete-confirm">
-                  <label className="delete-label">Enter sheet password to delete</label>
-                  <input
-                    type="password"
-                    value={deletePassword}
-                    onChange={(e) => {
-                      setDeletePassword(e.target.value);
-                      if (deleteError) setDeleteError('');
-                    }}
-                    placeholder="Password"
-                    className="delete-input"
-                  />
-                  {deleteError && <div className="delete-error">{deleteError}</div>}
-                </div>
-              )}
-
+              
               {/* Actions */}
               <div className="dropdown-actions">
-                <button 
+                <button
                   onClick={() => {
-                    setDeleteError('');
-                    if (!showDeletePrompt) {
-                      setShowDeletePrompt(true);
-                      return;
-                    }
-                    handleDelete();
-                  }}
+                      onDeleteSession();
+                      onClose();
+                    }}
                   className="action-button clear-button"
                 >
                   <Trash2 size={14} />

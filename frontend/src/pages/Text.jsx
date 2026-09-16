@@ -319,7 +319,7 @@ export default function TextPage() {
     if (storageKey) {
       sessionStorage.removeItem(storageKey);
     }
-    navigate('/text', { replace: true });
+    navigate('/', { replace: true });
   }
 
   const activeRoomUid = shareUid || sessionUid;
@@ -372,34 +372,7 @@ export default function TextPage() {
       />
       {/* ── Left 80% Main Content Area ── */}
       <div className="page-split__main" style={{ padding: 0 }}>
-        {!isEditing ? (
-          <div className="word-sheet__empty">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="empty-state-wrapper"
-            >
-              <div className="empty-icon-container">
-                <FileText className="word-sheet__empty-icon" />
-              </div>
-              <div className="empty-text-group">
-                <h2 className="empty-title">Live Editor Room Ready</h2>
-                <p className="empty-desc">
-                  Start typing to create a sheet or use the button below to initialize a new room connected to the backend database.
-                </p>
-              </div>
-              <div className="flex gap-3 items-center justify-center">
-                <button onClick={reset} className="page-split__btn-primary" style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>
-                  <Plus size={18} />
-                  Create New Room Sheet
-                </button>
-                <Link to="/" className="home-link">
-                  Go to Home
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        ) : isFetchingRoom ? (
+        {isFetchingRoom ? (
           <div className="word-sheet__empty">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
