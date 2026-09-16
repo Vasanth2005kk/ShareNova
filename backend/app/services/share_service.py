@@ -6,7 +6,7 @@ Replaces: backend/src/services/ShareService.ts
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, delete as sq_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -333,3 +333,38 @@ async def list_active_shares(db: AsyncSession, limit: int = 12) -> list[dict]:
             break
 
     return out
+
+
+async def delete_share(db: AsyncSession, uid: str) -> bool:
+    """Delete a share and its files from DB and storage. Returns True on success."""
+    result = await db.execute(
+        select(Share).where(Share.urlid == uid).options(selectinload(Share.files))
+    )
+    share = result.scalar_one_or_none()
+    if not share:
+        return False
+
+    # Collect storage keys
+    storage_keys = [f.fileurl for f in share.files] if share.files else []
+
+    # Delete files from storage (best-effort)
+    try:
+        if storage_keys:
+            await storage_service.delete_files(storage_keys)
+    except Exception:
+        # ignore storage errors; proceed to delete DB record
+        pass
+
+    # Use explicit SQL DELETE statements to ensure rows are removed.
+    try:
+        if share.files:
+            await db.execute(sq_delete(File).where(File.urlid == uid))
+        await db.execute(sq_delete(TextShare).where(TextShare.urlid == uid))
+        await db.execute(sq_delete(Share).where(Share.urlid == uid))
+        await db.commit()
+        print(f"Deleted share {uid} and related rows from DB")
+        return True
+    except Exception as e:
+        await db.rollback()
+        print(f"ERROR deleting share {uid}: {e}")
+        return False

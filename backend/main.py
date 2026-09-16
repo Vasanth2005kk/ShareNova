@@ -1,12 +1,4 @@
-"""
-main.py — FastAPI application entry point.
-Replaces: backend/src/app.ts
-
-Assembles middleware, routers, CORS, and the cleanup scheduler.
-"""
-
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -25,9 +17,7 @@ from app.middleware.security import SecurityHeadersMiddleware
 from app.routers import shares, files, download, health
 from app.services.cleanup_service import cleanup_expired_shares
 from app.services.password_service import cleanup_expired_sessions
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("sharenova")
+from terminaUi import show_server_status
 
 scheduler = AsyncIOScheduler()
 
@@ -35,12 +25,10 @@ scheduler = AsyncIOScheduler()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown lifecycle."""
-    # ── Startup ──────────────────────────────────────────
-    # Create tables if they don't exist
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if settings.AUTO_CREATE_TABLES:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
-    # Start cleanup scheduler — runs immediately, then every 5 minutes
     scheduler.add_job(
         cleanup_expired_shares,
         "interval",
@@ -56,21 +44,9 @@ async def lifespan(app: FastAPI):
         max_instances=1,
     )
     scheduler.start()
-
-    # Run cleanup once immediately on startup
     asyncio.create_task(cleanup_expired_shares())
-
-    logger.info(
-        f"\n"
-        f"  ╔══════════════════════════════════════════╗\n"
-        f"  ║                                          ║\n"
-        f"  ║   🚀 ShareNova API Server               ║\n"
-        f"  ║   Running on port {str(settings.PORT):<24}║\n"
-        f"  ║   Environment: {settings.NODE_ENV:<23}║\n"
-        f"  ║                                          ║\n"
-        f"  ╚══════════════════════════════════════════╝\n"
-    )
-    logger.info("🕐 Cleanup worker started — running every 5 minutes")
+    show_server_status(settings.APPNAME)
+    print("🕐 Cleanup worker started — running every 5 minutes")
 
     yield
 
@@ -84,7 +60,7 @@ async def lifespan(app: FastAPI):
 # Enable interactive API docs in non-production environments
 docs_enabled = settings.NODE_ENV != "production"
 app = FastAPI(
-    title="ShareNova API",
+    title=f"{settings.APPNAME} API",
     version="2.0.0",
     lifespan=lifespan,
     docs_url=("/docs" if docs_enabled else None),
@@ -115,7 +91,7 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     """Convert FastAPI validation failures to 400 with our envelope."""
     details = jsonable_encoder(exc.errors())
-    logger.warning(f"Validation error for {request.url.path}: {details}")
+    print(f"Validation error for {request.url.path}: {details}")
     return JSONResponse(
         status_code=400,
         content={"success": False, "error": "Validation failed", "details": details},
@@ -124,7 +100,7 @@ async def validation_exception_handler(
 # ─── Global exception handler ───────────────────────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+    print(f"Unhandled exception on {request.url.path}: {exc}")
     response = JSONResponse(
         status_code=500,
         content={"success": False, "error": f"Internal server error: {str(exc)}"},

@@ -32,7 +32,6 @@ async def list_active_shares(
 
 # ─── POST /api/shares/file — Create file share ─────────
 
-
 @router.post("/file")
 @limiter.limit(UPLOAD_LIMIT)
 async def create_file_share(
@@ -293,3 +292,45 @@ async def get_text_content(
         )
 
     return {"success": True, "data": content}
+
+
+# ─── DELETE /api/shares/{uid} — Delete a share and its files ─────────
+@router.delete("/{uid}")
+@limiter.limit(UPLOAD_LIMIT)
+async def delete_share(
+    request: Request,
+    uid: str,
+    db: AsyncSession = Depends(get_db),
+    x_session_token: str | None = Header(default=None, alias="X-Session-Token"),
+):
+    clean_uid = normalize_uid(uid)
+    if not is_valid_uid(clean_uid):
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Invalid UID format"},
+        )
+
+    share = await share_service.get_share_by_uid(db, clean_uid)
+    if not share:
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "error": "Share not found or has expired"},
+        )
+
+    # If private, require session token
+    if share["isPrivate"]:
+        token = x_session_token or request.query_params.get("token")
+        if not token or not password_service.validate_session_token(token, clean_uid):
+            return JSONResponse(
+                status_code=401,
+                content={"success": False, "error": "Authentication required"},
+            )
+
+    deleted = await share_service.delete_share(db, clean_uid)
+    if not deleted:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Failed to delete share"},
+        )
+
+    return {"success": True, "data": {"uid": clean_uid, "deleted": True}}

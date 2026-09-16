@@ -73,6 +73,12 @@ export async function getTextContent(uid, sessionToken) {
   return request(`/api/shares/${uid}/content`, { headers });
 }
 
+export async function deleteShare(uid, sessionToken) {
+  const headers = {};
+  if (sessionToken) headers['X-Session-Token'] = sessionToken;
+  return request(`/api/shares/${uid}`, { method: 'DELETE', headers });
+}
+
 // ─── Downloads ──────────────────────────────────────────
 
 export function getFileDownloadUrl(fileId) {

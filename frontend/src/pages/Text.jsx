@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import DropZone from '@/components/upload/DropZone';
 import DocumentInfoDropdown from '@/components/editor/DocumentInfoDropdown';
 import ShareModal from '@/components/shared/ShareModal';
-import { createTextShare, updateTextShare, getTextContent, getShareByUID, verifyPassword } from '@/lib/api';
+import { createTextShare, updateTextShare, getTextContent, getShareByUID, verifyPassword, deleteShare } from '@/lib/api';
 import PasswordModal from '@/components/shared/PasswordModal';
 import {
   doesShareRequirePassword,
@@ -302,24 +302,36 @@ export default function TextPage() {
   }
 
   function deleteSession() {
-    setContent('');
-    setTitle('');
-    setOptions({ expiresIn: initialState.expiresIn || '24h', password: '' });
-    setState('idle');
-    setDbStatus('idle');
-    setShareUid('');
-    setSessionUid('');
-    setExpiresAt(null);
-    setError('');
-    setShowDetails(false);
-    sessionStart.current = null;
-    setSessionExpiresAt(null);
-    setSessionPassword('');
-    setSessionActive(false);
-    if (storageKey) {
-      sessionStorage.removeItem(storageKey);
-    }
-    navigate('/', { replace: true });
+    // Try deleting from backend DB if this sheet was saved
+    (async () => {
+      try {
+        if (shareUid) {
+          // ignore response; best-effort
+          await deleteShare(shareUid, apiSessionToken);
+        }
+      } catch (e) {
+        console.warn('Failed to delete share on backend:', e);
+      } finally {
+        setContent('');
+        setTitle('');
+        setOptions({ expiresIn: initialState.expiresIn || '24h', password: '' });
+        setState('idle');
+        setDbStatus('idle');
+        setShareUid('');
+        setSessionUid('');
+        setExpiresAt(null);
+        setError('');
+        setShowDetails(false);
+        sessionStart.current = null;
+        setSessionExpiresAt(null);
+        setSessionPassword('');
+        setSessionActive(false);
+        if (storageKey) {
+          sessionStorage.removeItem(storageKey);
+        }
+        navigate('/', { replace: true });
+      }
+    })();
   }
 
   const activeRoomUid = shareUid || sessionUid;
