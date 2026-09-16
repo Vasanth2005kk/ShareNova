@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import CountdownTimer from '@/components/common/CountdownTimer';
 import '@/styles/DocumentInfoDropdown.css';
 
-export default function DocumentInfoDropdown({ 
-  isOpen, 
-  onClose, 
-  title, 
-  setTitle, 
-  options, 
-  setOptions, 
-  contentLength, 
+export default function DocumentInfoDropdown({
+  isOpen,
+  onClose,
+  title,
+  setTitle,
+  options,
+  setOptions,
+  contentLength,
   onDeleteSession,
   expiresAt,
   sessionExpiresAt,
@@ -19,14 +19,15 @@ export default function DocumentInfoDropdown({
   sessionStart,
   sessionUid
 }) {
-  // Local draft state to prevent instant updates to the main editor
+
   const [draftTitle, setDraftTitle] = useState(title);
   const [draftOptions, setDraftOptions] = useState(options);
-  
+  const [isChecked, setIsChecked] = useState(false);
 
 
   // Sync local state when dropdown opens
   useEffect(() => {
+    setIsChecked(false);
     if (isOpen) {
       setDraftTitle(title);
       setDraftOptions(options);
@@ -44,7 +45,7 @@ export default function DocumentInfoDropdown({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -58,7 +59,7 @@ export default function DocumentInfoDropdown({
                 </div>
                 <span className="header-label">Information</span>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="close-button"
               >
@@ -73,7 +74,7 @@ export default function DocumentInfoDropdown({
                 <label className="section-label">Document Title</label>
                 <div className="title-input-wrapper">
                   <FileText className="title-input-icon" />
-                  <input 
+                  <input
                     type="text"
                     value={draftTitle}
                     onChange={(e) => setDraftTitle(e.target.value)}
@@ -94,20 +95,28 @@ export default function DocumentInfoDropdown({
                   sessionStart={sessionStart}
                 />
               </div>
-              
-              {/* Actions */}
+
+              <div className="dropdown-actions">
+                <label>
+                  <input type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => setIsChecked(e.target.checked)} /> I Agree To Delete This Session </label>
+              </div>
+
               <div className="dropdown-actions">
                 <button
+                  disabled={!isChecked}
+                  aria-disabled={!isChecked}
                   onClick={() => {
-                      onDeleteSession();
-                      onClose();
-                    }}
-                  className="action-button clear-button"
+                    onDeleteSession();
+                    onClose();
+                  }}
+                  className={`action-button clear-button ${!isChecked ? 'disabled' : ''}`}
                 >
                   <Trash2 size={14} />
                   Delete
                 </button>
-                <button 
+                <button
                   onClick={handleDone}
                   className="action-button done-button"
                 >

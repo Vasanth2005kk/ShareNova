@@ -191,6 +191,31 @@
   gap: 0.75rem;
 }
 
+.dropdown-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.dropdown-actions input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  accent-color: #ef4444;
+}
+
+.dropdown-actions input[type="checkbox"]:focus {
+  outline: 2px solid rgba(239,68,68,0.18);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .delete-confirm {
   padding: 0.75rem;
   border-radius: 0.75rem;
@@ -254,6 +279,32 @@
 .clear-button:hover {
   background-color: #ef4444;
   color: white;
+}
+
+.action-button[disabled], .action-button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.clear-button.disabled {
+  background-color: rgba(239,68,68,0.02);
+  color: rgba(239,68,68,0.6);
+  border: 1px solid rgba(239,68,68,0.06);
+  cursor: not-allowed;
+
+}
+
+.clear-button:not([disabled]):hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.action-button:focus {
+  outline: 2px solid rgba(249,115,22,0.12);
+  outline-offset: 2px;
 }
 
 .done-button {

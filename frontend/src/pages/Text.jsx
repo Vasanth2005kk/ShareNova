@@ -129,6 +129,11 @@ export default function TextPage() {
         }
       } else {
         setDbStatus('idle');
+        // If the user navigated here with a UID (joining a room) and the
+        // backend reports the share is missing, redirect back to home.
+        if (isJoiningRoom) {
+          navigate('/', { replace: true });
+        }
       }
     } catch (err) {
       console.warn('Room not found on backend DB yet:', err);
@@ -306,8 +311,17 @@ export default function TextPage() {
     (async () => {
       try {
         if (shareUid) {
-          // ignore response; best-effort
-          await deleteShare(shareUid, apiSessionToken);
+          // Attempt to delete on backend; prefer explicit apiSessionToken,
+          // fall back to any token stored in sessionStorage for this share.
+          const tokenToUse = apiSessionToken || getShareSessionToken(shareUid);
+          try {
+            const res = await deleteShare(shareUid, tokenToUse);
+            if (!res || !res.success) {
+              console.warn('Backend delete failed or returned error:', res?.error || res);
+            }
+          } catch (e) {
+            console.warn('Failed to call delete API:', e);
+          }
         }
       } catch (e) {
         console.warn('Failed to delete share on backend:', e);

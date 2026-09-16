@@ -3,7 +3,7 @@
   inset: 0;
   z-index: 60;
   background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(80px);
+  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(80px);
 }
 
