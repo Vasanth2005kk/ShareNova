@@ -228,7 +228,7 @@ export default function TextPage() {
 
   // ─── Save & Sync to Backend DB ───────────────────────────
   async function handleSubmit() {
-    if (!content.trim()) return;
+    // if (!content.trim()) return;
     setState('submitting');
     setDbStatus('syncing');
     setError('');
@@ -237,17 +237,6 @@ export default function TextPage() {
     const token = getShareSessionToken(targetUid) || apiSessionToken;
 
     try {
-      if (shareUid) {
-        const metadataRes = await getShareByUID(targetUid);
-        if (metadataRes.success && metadataRes.data?.isPrivate && !token) {
-          setShowPasswordModal(true);
-          setError('This share is password protected. Verify the password before updating it.');
-          setState('idle');
-          setDbStatus('idle');
-          return;
-        }
-      }
-
       let res;
       if (shareUid) {
         // Update existing room sheet in DB
@@ -457,7 +446,7 @@ export default function TextPage() {
 
                     <button
                       onClick={handleSubmit}
-                      disabled={state === 'submitting' || !content.trim()}
+                      disabled={state === 'submitting'}
                       className="save-button"
                       title="Save sheet and update database room"
                     ><Upload size={14} />

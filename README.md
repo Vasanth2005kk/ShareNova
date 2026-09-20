@@ -76,6 +76,7 @@ Upload files or paste text → get a **12-digit code** → share the code → re
 - **Per-letter 3D animated** brand title with glow
 - **Floating orb** particle background
 - **Responsive** across all screen sizes
+ - **Delete confirmation UI** — destructive actions now require an explicit "I agree" checkbox and show a clear disabled visual state until confirmed
 
 </td>
 <td width="50%">
@@ -217,6 +218,10 @@ python main.py
 
 The API will be running at `http://localhost:8000`
 
+Note: the project defaults to a local SQLite database (no external DB required).
+The default path is `backend/storage/sharenova.db` (see `app/config.py`). To use
+PostgreSQL instead, set `DATABASE_URL` in `backend/.env` to a PostgreSQL DSN.
+
 ### 3. Set Up the Frontend
 
 ```bash
@@ -239,11 +244,16 @@ The app will be running at `http://localhost:5173`
 
 ```env
 PORT=8000
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/sharenova
+DATABASE_URL=sqlite+aiosqlite:///backend/storage/sharenova.db
 STORAGE_DIR=storage
 BCRYPT_ROUNDS=12
 SESSION_SECRET=your_32_char_random_string
 FRONTEND_URL=http://localhost:5173
+```
+
+If you prefer PostgreSQL, replace `DATABASE_URL` with e.g.
+```
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/sharenova
 ```
 
 ### Frontend (`frontend/.env`)
