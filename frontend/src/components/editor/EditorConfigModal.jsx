@@ -2,7 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, FileText, Lock, Clock, AlertCircle, X, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { createTextShare } from '@/lib/api';
+import { createTextShare, verifyPassword } from '@/lib/api';
+import { markShareAsVerified } from '@/lib/sessionPasswordManager';
 import '@/styles/EditorConfigModal.css';
 
 export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
@@ -35,6 +36,15 @@ export default function EditorConfigModal({ isOpen, onClose, data, onChange }) {
 
         if (res.success && res.data?.uid) {
           const createdUid = res.data.uid;
+          const passwordValue = data.password?.trim();
+
+          if (passwordValue) {
+            const verifyRes = await verifyPassword(createdUid, passwordValue);
+            if (verifyRes.success && verifyRes.data?.sessionToken) {
+              markShareAsVerified(createdUid, verifyRes.data.sessionToken);
+            }
+          }
+
           onClose();
           navigate(`/text/${createdUid}`, {
             state: { ...data, shareUid: createdUid, createdInDb: true },

@@ -226,6 +226,29 @@ export default function TextPage() {
     sessionStorage.setItem(storageKey, JSON.stringify(stateToSave));
   }, [title, content, options, shareUid, sessionUid, expiresAt, sessionExpiresAt, sessionPassword, sessionActive, storageKey]);
 
+  const ensurePrivateShareSession = useCallback(async (uid, password) => {
+    if (!uid || !password) return true;
+
+    const existingToken = getShareSessionToken(uid);
+    if (existingToken) {
+      setApiSessionToken(existingToken);
+      return true;
+    }
+
+    try {
+      const res = await verifyPassword(uid, password);
+      if (res.success && res.data?.sessionToken) {
+        markShareAsVerified(uid, res.data.sessionToken);
+        setApiSessionToken(res.data.sessionToken);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn('Private share verification failed on update flow:', err);
+      return false;
+    }
+  }, []);
+
   // ─── Save & Sync to Backend DB ───────────────────────────
   async function handleSubmit() {
     // if (!content.trim()) return;
@@ -234,16 +257,34 @@ export default function TextPage() {
     setError('');
 
     const targetUid = shareUid || sessionUid || generateUID();
-    const token = getShareSessionToken(targetUid) || apiSessionToken;
+    let token = getShareSessionToken(targetUid) || apiSessionToken;
 
     try {
       let res;
       if (shareUid) {
+        if (!token && options.password) {
+          const verified = await ensurePrivateShareSession(targetUid, options.password);
+          if (verified) {
+            token = getShareSessionToken(targetUid) || apiSessionToken;
+          }
+        }
+
         // Update existing room sheet in DB
         res = await updateTextShare(targetUid, {
           content,
           title: title || 'Untitled Room Document',
         }, token || undefined);
+
+        if (!res.success && res.error === 'Authentication required' && options.password) {
+          const verified = await ensurePrivateShareSession(targetUid, options.password);
+          if (verified) {
+            token = getShareSessionToken(targetUid) || apiSessionToken;
+            res = await updateTextShare(targetUid, {
+              content,
+              title: title || 'Untitled Room Document',
+            }, token || undefined);
+          }
+        }
       } else {
         // Create text share room in DB
         res = await createTextShare({
@@ -252,6 +293,25 @@ export default function TextPage() {
           expiresIn: options.expiresIn,
           password: options.password,
         });
+
+        if (res.success && res.data?.uid && options.password) {
+          const createdUid = res.data.uid;
+          const verified = await ensurePrivateShareSession(createdUid, options.password);
+          if (!verified) {
+            setError('Room created, but verification failed. Please refresh and re-enter the password.');
+            setState('idle');
+            setDbStatus('error');
+            return;
+          }
+          setShareUid(createdUid);
+          setSessionUid(createdUid);
+          setExpiresAt(res.data.expires_at || res.data.expiresAt || null);
+          setState('idle');
+          setDbStatus('connected');
+          setLastSyncedAt(new Date().toLocaleTimeString());
+          navigate(`/text/${createdUid}`, { replace: true });
+          return;
+        }
       }
 
       if (res.success && res.data) {
