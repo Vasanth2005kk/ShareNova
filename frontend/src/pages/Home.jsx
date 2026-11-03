@@ -8,7 +8,6 @@ import { clearAllVerifications } from '@/lib/sessionPasswordManager';
 import { normalizeUID, isValidUID } from '@/lib/uid';
 import '@/styles/Home.css';
 const Projectname = import.meta.env.VITE_projectName ;
-console.log('Project Name:', Projectname);
 // ─── Animated glowing text component ────────────────────
 
 const demoRooms = [];

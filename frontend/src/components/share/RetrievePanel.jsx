@@ -46,6 +46,7 @@ export default function RetrievePanel({ title = 'Retrieve a Share', description 
 
       // Check if already verified and get the session token
       const existingToken = getShareSessionToken(uid);
+      setSessionToken(existingToken || '');
 
       if (shareData.type === 'TEXT') {
         const contentRes = await getTextContent(shareData.uid, existingToken || undefined);

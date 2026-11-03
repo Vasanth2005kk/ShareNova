@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
-import {
-  FileText, Loader2, Sparkles, Save, Info, Upload,
-  CheckCircle2, Copy, Check, RefreshCw, Radio, Plus, UploadCloud, Search, Share2
-} from 'lucide-react';
+import { FileText, Loader2, Sparkles, Save, Info, Upload, CheckCircle2, Copy, Check, RefreshCw, Radio, Plus, UploadCloud, Search, Share2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import DropZone from '@/components/upload/DropZone';
@@ -106,6 +103,12 @@ export default function TextPage() {
       const metadataRes = await getShareByUID(uidToFetch);
       if (metadataRes.success && metadataRes.data) {
         const meta = metadataRes.data;
+
+        // Use the server's real expiry for the countdown instead of a locally computed one.
+        if (meta.expiresAt) {
+          setExpiresAt(meta.expiresAt);
+          setSessionExpiresAt(meta.expiresAt);
+        }
 
         // If private, check if already verified in this session
         if (doesShareRequirePassword(meta, uidToFetch)) {
@@ -249,7 +252,6 @@ export default function TextPage() {
     }
   }, []);
 
-  // ─── Save & Sync to Backend DB ───────────────────────────
   async function handleSubmit() {
     // if (!content.trim()) return;
     setState('submitting');
@@ -360,8 +362,6 @@ export default function TextPage() {
     (async () => {
       try {
         if (shareUid) {
-          // Attempt to delete on backend; prefer explicit apiSessionToken,
-          // fall back to any token stored in sessionStorage for this share.
           const tokenToUse = apiSessionToken || getShareSessionToken(shareUid);
           try {
             const res = await deleteShare(shareUid, tokenToUse);
@@ -433,8 +433,6 @@ export default function TextPage() {
                 setLastSyncedAt(new Date().toLocaleTimeString());
               }
             } else {
-              // show error via simple state change
-              // re-open modal for retry
               setShowPasswordModal(true);
             }
           } catch (err) {
@@ -461,116 +459,112 @@ export default function TextPage() {
           </div>
         ) : (
           <div className="word-sheet-container">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="word-sheet"
-              >
-                {/* Sheet Top Header */}
-                <div className="word-sheet-header">
-                  <div className="word-sheet-title-group">
-                    <div className="flex items-center gap-3">
-                      <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="word-sheet"
+            >
+              {/* Sheet Top Header */}
+              <div className="word-sheet-header">
+                <div className="word-sheet-title-group">
+                  <div className="flex items-center gap-3">
+                    <h1 className="word-sheet-title">{title || 'Untitled Document'}</h1>
 
-                      {/* Live DB Indicator */}
-                      <div className={`db-status-badge ${dbStatus}`}>
-                        {dbStatus === 'syncing' ? (
-                          <>
-                            <Loader2 size={12} className="animate-spin text-amber-400" />
-                            <span>Syncing DB...</span>
-                          </>
-                        ) : dbStatus === 'connected' ? (
-                          <>
-                            <div className="status-dot connected" />
-                            <span>Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="status-dot idle" />
-                            <span>Room Ready</span>
-                          </>
-                        )}
-                      </div>
+                    {/* Live DB Indicator */}
+                    <div className={`db-status-badge ${dbStatus}`}>
+                      {dbStatus === 'syncing' ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin text-amber-400" />
+                          <span>Syncing DB...</span>
+                        </>
+                      ) : dbStatus === 'connected' ? (
+                        <>
+                          <div className="status-dot connected" />
+                          <span>Active</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="status-dot idle" />
+                          <span>Room Ready</span>
+                        </>
+                      )}
                     </div>
-
                   </div>
 
-                  <div className='Details-con flex items-center gap-2'>
-                    <button
-                      onClick={() => setShowShareModal(true)}
-                      className="share-button"
-                      title="Share Room URL"
-                    ><Share2 size={14} />
-                      <span>Share</span>
-                    </button>
-
-                    <button
-                      onClick={handleSubmit}
-                      disabled={state === 'submitting'}
-                      className="save-button"
-                      title="Save sheet and update database room"
-                    ><Upload size={14} />
-                      <span>Update</span>
-                    </button>
-
-                    <button
-                      onClick={() => setShowDetails(!showDetails)}
-                      className={`details-toggle-button ${showDetails ? 'active' : ''}`}
-                      title="Document Information & Options"
-                    >
-                      <Info size={20} />
-                    </button>
-
-                    <DocumentInfoDropdown
-                      isOpen={showDetails}
-                      onClose={() => setShowDetails(false)}
-                      title={title}
-                      setTitle={setTitle}
-                      options={options}
-                      setOptions={setOptions}
-                      contentLength={content.length}
-                      onDeleteSession={deleteSession}
-                      expiresAt={expiresAt}
-                      sessionExpiresAt={sessionExpiresAt}
-                      sessionPassword={sessionPassword}
-                      sessionStart={sessionStart.current}
-                      sessionUid={activeRoomUid}
-                    />
-                  </div>
                 </div>
 
-                {/* Text Area */}
-                <textarea
-                  value={content}
-                  onChange={(e) => {
-                    setContent(e.target.value.slice(0, MAX_TEXT_SIZE));
-                    if (dbStatus === 'connected') setDbStatus('idle');
-                  }}
-                  placeholder="Start typing your document here... Content is backed up locally and syncs to backend database."
-                  className="word-sheet__textarea"
-                />
+                <div className='Details-con flex items-center gap-2'>
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="share-button"
+                    title="Share Room URL"
+                  ><Share2 size={14} />
+                    <span>Share</span>
+                  </button>
 
-                {error && (
-                  <div className="save-error" role="alert">
-                    {error}
-                  </div>
-                )}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={state === 'submitting'}
+                    className="save-button"
+                    title="Save sheet and update database room"
+                  ><Upload size={14} />
+                    <span>Update</span>
+                  </button>
 
-                {/* Sheet Bottom Footer */}
-                <div className="word-sheet-footer">
-                  <span className="char-counter">
-                    {content.length.toLocaleString()} / {MAX_TEXT_SIZE.toLocaleString()} Max Characters
-                  </span>
+                  <button
+                    onClick={() => setShowDetails(!showDetails)}
+                    className={`details-toggle-button ${showDetails ? 'active' : ''}`}
+                    title="Document Information & Options"
+                  >
+                    <Info size={20} />
+                  </button>
+
+                  <DocumentInfoDropdown
+                    isOpen={showDetails}
+                    onClose={() => setShowDetails(false)}
+                    title={title}
+                    setTitle={setTitle}
+                    options={options}
+                    setOptions={setOptions}
+                    contentLength={content.length}
+                    onDeleteSession={deleteSession}
+                    expiresAt={expiresAt}
+                    sessionExpiresAt={sessionExpiresAt}
+                    sessionPassword={sessionPassword}
+                    sessionStart={sessionStart.current}
+                    sessionUid={activeRoomUid}
+                  />
                 </div>
-              </motion.div>
+              </div>
+
+              {/* Text Area */}
+              <textarea
+                value={content}
+                onChange={(e) => {
+                  setContent(e.target.value.slice(0, MAX_TEXT_SIZE));
+                  if (dbStatus === 'connected') setDbStatus('idle');
+                }}
+                placeholder="Start typing your document here... Content is backed up locally and syncs to backend database."
+                className="word-sheet__textarea"
+              />
+
+              {error && (
+                <div className="save-error" role="alert">
+                  {error}
+                </div>
+              )}
+
+              {/* Sheet Bottom Footer */}
+              <div className="word-sheet-footer">
+                <span className="char-counter">
+                  {content.length.toLocaleString()} / {MAX_TEXT_SIZE.toLocaleString()} Max Characters
+                </span>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>
-
-      {/* ── Right 20% Sidebar Panel ── */}
       <aside className="page-split__sidebar">
-
-        {/* Upload Files Card */}
         <div className="page-split__sidebar-card">
           <span className="page-split__sidebar-label flex items-center gap-2">
             <UploadCloud size={14} className="text-amber-400" />
@@ -579,22 +573,12 @@ export default function TextPage() {
           <DropZone files={selectedFiles} onFilesChange={setSelectedFiles} />
         </div>
 
-        {/* Quick Actions Card */}
-        {/* <div className="page-split__sidebar-card">
-          <span className="page-split__sidebar-label">Quick Actions</span>
-          <button onClick={reset} className="page-split__btn-secondary flex items-center justify-center gap-2">
-            <Plus size={14} />
-            Create New Sheet Room
-          </button>
-        </div> */}
       </aside>
-      {/* Share Modal */}
-      <ShareModal 
-        isOpen={showShareModal} 
-        onClose={() => setShowShareModal(false)} 
-        shareUrl={window.location.href} 
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        shareUrl={window.location.href}
       />
-
     </div>
   );
 }

@@ -31,7 +31,6 @@ export async function createFileShare(files, options) {
 // ─── Text Share ─────────────────────────────────────────
 
 export async function createTextShare(data) {
-  console.log("data in api.js: ", data);
   return request('/api/shares/text', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -85,8 +84,9 @@ export function getFileDownloadUrl(fileId) {
   return `${API_URL}/api/files/${fileId}/download`;
 }
 
-export function getZipDownloadUrl(uid) {
-  return `${API_URL}/api/download/${uid}/all`;
+export function getZipDownloadUrl(uid, sessionToken) {
+  const url = `${API_URL}/api/download/${uid}/all`;
+  return sessionToken ? `${url}?token=${encodeURIComponent(sessionToken)}` : url;
 }
 
 // ─── Utility ────────────────────────────────────────────

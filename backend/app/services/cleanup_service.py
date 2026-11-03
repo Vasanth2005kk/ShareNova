@@ -1,62 +1,84 @@
-"""
-cleanup_service.py — APScheduler-based cleanup worker.
-Replaces: backend/src/services/CleanupService.ts (node-cron)
-"""
+"""Background worker that removes expired shares (DB rows + files on disk)
+and expired session tokens."""
 
-import asyncio
-from datetime import datetime, timezone
+import logging
+import threading
 
-from sqlalchemy import select, delete
+from flask import Flask
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.database import async_session
+from app.database import SessionFactory
 from app.models import Share
-from app.services import storage_service
+from app.services import password_service, storage_service
+from app.utils import utcnow
 
-_running = False
+logger = logging.getLogger(__name__)
+
+_run_lock = threading.Lock()
+_worker: threading.Thread | None = None
+_stop_event = threading.Event()
 
 
-async def cleanup_expired_shares() -> None:
-    """Delete expired shares from DB and storage. Overlap-prevention via _running flag."""
-    global _running
-    if _running:
-        print("DEBUG: Cleanup already running — skipping")
+def cleanup_expired_shares(app: Flask) -> int:
+    """Delete all expired shares. Returns the number of shares removed."""
+    if not _run_lock.acquire(blocking=False):
+        logger.debug("Cleanup already running, skipping")
+        return 0
+    try:
+        with app.app_context(), SessionFactory() as session:
+            expired = session.execute(
+                select(Share)
+                .where(Share.expires_at.is_not(None), Share.expires_at <= utcnow())
+                .options(selectinload(Share.files))
+            ).scalars().all()
+            if not expired:
+                return 0
+
+            storage_keys = [f.fileurl for share in expired for f in share.files]
+            uids = [share.urlid for share in expired]
+            for share in expired:
+                session.delete(share)
+            session.commit()
+
+            storage_service.delete_files(storage_keys)
+            for uid in uids:
+                password_service.revoke_tokens_for(uid)
+
+            logger.info("Cleaned up %d expired shares, %d files", len(expired), len(storage_keys))
+            return len(expired)
+    except Exception:
+        logger.exception("Cleanup of expired shares failed")
+        return 0
+    finally:
+        _run_lock.release()
+
+
+def run_cleanup_cycle(app: Flask) -> None:
+    cleanup_expired_shares(app)
+    removed = password_service.cleanup_expired_sessions()
+    if removed:
+        logger.debug("Removed %d expired session tokens", removed)
+
+
+def start_cleanup_worker(app: Flask) -> None:
+    """Run a cleanup cycle immediately and then every CLEANUP_INTERVAL_SECONDS."""
+    global _worker
+    if _worker is not None and _worker.is_alive():
         return
 
-    _running = True
-    try:
-        async with async_session() as db:
-            # Find expired shares
-            result = await db.execute(
-                select(Share)
-                .where(Share.expires_at <= datetime.now(timezone.utc))
-                .where(Share.expires_at.isnot(None))
-                .options(selectinload(Share.files))
-            )
-            expired = result.scalars().all()
+    interval = app.config["CLEANUP_INTERVAL_SECONDS"]
 
-            if not expired:
-                return
+    def _loop():
+        while not _stop_event.is_set():
+            run_cleanup_cycle(app)
+            _stop_event.wait(interval)
 
-            # Collect storage keys and delete from storage
-            storage_keys = []
-            for share in expired:
-                for f in share.files:
-                    storage_keys.append(f.storage_key)
+    _stop_event.clear()
+    _worker = threading.Thread(target=_loop, name="sharenova-cleanup", daemon=True)
+    _worker.start()
+    logger.info("Cleanup worker started — running every %d seconds", interval)
 
-            if storage_keys:
-                try:
-                    await storage_service.delete_files(storage_keys)
-                except Exception as e:
-                    print(f"ERROR: Failed to delete files from storage: {e}")
 
-            # Delete from DB (cascade handles files + text_shares)
-            share_ids = [s.id for s in expired]
-            await db.execute(delete(Share).where(Share.id.in_(share_ids)))
-            await db.commit()
-
-            print(f"Cleaned up {len(expired)} expired shares, {len(storage_keys)} files")
-    except Exception as e:
-        print(f"ERROR: Cleanup error: {e}")
-    finally:
-        _running = False
+def stop_cleanup_worker() -> None:
+    _stop_event.set()

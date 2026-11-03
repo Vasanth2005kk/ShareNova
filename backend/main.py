@@ -1,132 +1,26 @@
-import asyncio
-from contextlib import asynccontextmanager
+"""Development entry point: `python main.py`.
 
-from fastapi import FastAPI, Request
-from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+For production run the WSGI app with a single worker process (session tokens and
+rate-limit counters are kept in memory), e.g.:
+    gunicorn -w 1 --threads 8 -b 0.0.0.0:8000 "app:create_app()"
+"""
 
-from app.config import settings
-from app.database import engine, Base
-from app.middleware.rate_limiter import limiter
-from app.middleware.security import SecurityHeadersMiddleware
-from app.routers import shares, files, download, health
-from app.services.cleanup_service import cleanup_expired_shares
-from app.services.password_service import cleanup_expired_sessions
+import os
+
+from app import create_app
+from app.config import Config
 from terminaUi import show_server_status
 
-scheduler = AsyncIOScheduler()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Startup and shutdown lifecycle."""
-    if settings.AUTO_CREATE_TABLES:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
-    scheduler.add_job(
-        cleanup_expired_shares,
-        "interval",
-        minutes=5,
-        id="cleanup_shares",
-        max_instances=1,  # overlap prevention
-    )
-    scheduler.add_job(
-        cleanup_expired_sessions,
-        "interval",
-        minutes=5,
-        id="cleanup_sessions",
-        max_instances=1,
-    )
-    scheduler.start()
-    asyncio.create_task(cleanup_expired_shares())
-    show_server_status(settings.APPNAME)
-    print("🕐 Cleanup worker started — running every 5 minutes")
-
-    yield
-
-    # ── Shutdown ─────────────────────────────────────────
-    scheduler.shutdown()
-    await engine.dispose()
-
-
-# ─── App creation ────────────────────────────────────────
-
-# Enable interactive API docs in non-production environments
-docs_enabled = settings.NODE_ENV != "production"
-app = FastAPI(
-    title=f"{settings.APPNAME} API",
-    version="2.0.0",
-    lifespan=lifespan,
-    docs_url=("/docs" if docs_enabled else None),
-    redoc_url=("/redoc" if docs_enabled else None),
-    openapi_url=("/openapi.json" if docs_enabled else None),
-)
-
-# ─── Rate limiter ────────────────────────────────────────
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
-
-# ─── Middleware (order matters — outermost first) ────────
-app.add_middleware(SecurityHeadersMiddleware)
-frontend_origin = settings.FRONTEND_URL.rstrip("/")
-frontend_origin_127 = frontend_origin.replace("localhost", "127.0.0.1")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[frontend_origin, frontend_origin_127],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ─── Override FastAPI's default 422 with 400 ─────────────
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    """Convert FastAPI validation failures to 400 with our envelope."""
-    details = jsonable_encoder(exc.errors())
-    print(f"Validation error for {request.url.path}: {details}")
-    return JSONResponse(
-        status_code=400,
-        content={"success": False, "error": "Validation failed", "details": details},
-    )
-
-# ─── Global exception handler ───────────────────────────
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    print(f"Unhandled exception on {request.url.path}: {exc}")
-    response = JSONResponse(
-        status_code=500,
-        content={"success": False, "error": f"Internal server error: {str(exc)}"},
-    )
-    origin = request.headers.get("origin")
-    if origin:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
-
-# ─── Routes ──────────────────────────────────────────────
-app.include_router(health.router)
-app.include_router(shares.router)
-app.include_router(files.router)
-app.include_router(download.router)
-
-
-# ─── 404 fallback ────────────────────────────────────────
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def catch_all(path: str):
-    return JSONResponse(
-        status_code=404,
-        content={"success": False, "error": "Endpoint not found"},
-    )
-
-
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=settings.PORT, reload=True)
+    debug = Config.ENV != "production"
+    # With the debug reloader, this module runs in a watcher process and a child
+    # process; only the child (WERKZEUG_RUN_MAIN=true) serves requests, so only it
+    # should start the cleanup worker.
+    is_serving_process = not debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+
+    app = create_app(start_background_jobs=is_serving_process)
+    if is_serving_process:
+        show_server_status(app.config["APPNAME"])
+
+    # Auto-reload in development, but never expose the interactive Werkzeug debugger.
+    app.run(host=Config.HOST, port=Config.PORT, debug=debug, use_debugger=False, threaded=True)

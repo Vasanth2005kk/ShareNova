@@ -50,7 +50,7 @@ export default function FileShareView({ share, sessionToken }) {
 
       {(share.fileCount || 0) > 1 && (
         <a
-          href={getZipDownloadUrl(share.uid)}
+          href={getZipDownloadUrl(share.uid, sessionToken)}
           className="download-all-button"
         >
           <Archive size={16} />

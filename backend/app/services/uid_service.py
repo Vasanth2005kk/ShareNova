@@ -1,51 +1,44 @@
-"""
-uid_service.py — Cryptographic UID generation with collision retry.
-Replaces: backend/src/services/UIDService.ts
+"""6-digit share code generation and validation."""
 
-Algorithm: secrets.token_bytes(6) → big-endian int → decimal string → first 12 chars → zero-pad
-"""
-
-import secrets
 import re
+import secrets
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models import Share
 
 UID_LENGTH = 6
-UID_MODULO = 10**UID_LENGTH
+_UID_RE = re.compile(rf"\d{{{UID_LENGTH}}}")
+_SEPARATORS_RE = re.compile(r"[\s-]")
 
 
-def _generate_uid_candidate() -> str:
-    """Generate a single 6-digit UID candidate from random bytes."""
-    raw = secrets.token_bytes(4)
-    num = int.from_bytes(raw, byteorder="big") % UID_MODULO
-    return str(num).zfill(UID_LENGTH)
+def _candidate() -> str:
+    return str(secrets.randbelow(10**UID_LENGTH)).zfill(UID_LENGTH)
 
 
-async def generate_uid(db: AsyncSession, max_retries: int = 10) -> str:
-    """Generate a unique 6-digit UID, retrying on collision up to max_retries times."""
+def generate_uid(session: Session, max_retries: int = 20) -> str:
+    """Return a code not currently used by any share (expired or not)."""
     for _ in range(max_retries):
-        candidate = _generate_uid_candidate()
-        existing = await db.execute(select(Share.id).where(Share.urlid == candidate).limit(1))
-        if existing.scalar_one_or_none() is None:
+        candidate = _candidate()
+        taken = session.execute(
+            select(Share.id).where(Share.urlid == candidate).limit(1)
+        ).first()
+        if taken is None:
             return candidate
-    raise RuntimeError("Failed to generate a unique UID after max retries")
+    raise RuntimeError("Failed to generate a unique share code")
 
 
 def normalize_uid(raw: str) -> str:
-    """Strip all non-digit characters."""
-    return re.sub(r"\D", "", raw)[:UID_LENGTH]
+    """Strip spaces/dashes ("123 456" -> "123456"). Other characters are kept so
+    that malformed codes fail validation instead of matching a different share."""
+    return _SEPARATORS_RE.sub("", raw or "")
 
 
 def is_valid_uid(uid: str) -> bool:
-    """Check if a string is exactly 6 digits."""
-    return bool(re.fullmatch(rf"\d{{{UID_LENGTH}}}", uid))
+    return bool(_UID_RE.fullmatch(uid or ""))
 
 
 def format_uid(uid: str) -> str:
-    """Format a 6-digit UID into groups: '123 456'."""
-    clean = re.sub(r"\D", "", uid)[:UID_LENGTH]
-    parts = [clean[i : i + 3] for i in range(0, len(clean), 3)]
-    return " ".join(parts)
+    """'123456' -> '123 456'."""
+    return " ".join(uid[i : i + 3] for i in range(0, len(uid), 3))

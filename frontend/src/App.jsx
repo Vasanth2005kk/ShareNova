@@ -2,7 +2,6 @@ import { createBrowserRouter, Outlet } from 'react-router-dom';
 import Navbar from '@/components/common/Navbar';
 import HomePage from '@/pages/Home';
 import TextPage from '@/pages/Text';
-
 function RootLayout() {
   return (
     <>
@@ -13,7 +12,6 @@ function RootLayout() {
     </>
   );
 }
-
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,

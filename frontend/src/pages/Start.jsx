@@ -11,6 +11,7 @@ import { MAX_TEXT_SIZE, MAX_FILES, MAX_UPLOAD_SIZE } from '@/lib/constants';
 
 const DEFAULT_OPTIONS = { expiresIn: '24h' };
 const EXPIRY_MS = {
+  '30m': 1800000,
   '1h': 3600000,
   '6h': 21600000,
   '24h': 86400000,
